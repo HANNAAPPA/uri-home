@@ -1095,6 +1095,7 @@ function renderPf(d){
 
   document.getElementById("pane-pf").innerHTML=html;
   window._pfHoldings=d.holdings; window._pfCash=d.cash; window._pfCashUsd=d.cashUsd;
+  window._pfCashUsdFx=d.cashUsdFx;
   window._pfRp=d.rp||[]; window._pfFx=d.fx||0;
   loadHist(); loadSells(); loadDivs();
 }
@@ -1799,7 +1800,7 @@ function openPfEdit(){
     +'<span class="cashin">현금(원) <input id="pfCash" type="number" value="'+(window._pfCash||0)+'"></span>'
     +'<span class="cashin">현금($) <input id="pfCashUsd" type="number" value="'+(window._pfCashUsd||0)+'">'
       +'<button class="buyb" onclick="pfFxBuy()">➕환전</button></span>'
-    +'<input type="hidden" id="pfCashUsdFx" value="'+(window._pfCashUsdFx||0)+'">'
+    +'<span class="cashin">평균환전환율 <input id="pfCashUsdFx" type="number" value="'+(window._pfCashUsdFx||0)+'"></span>'
     +'<button class="save" onclick="savePf()">💾 저장하고 새로고침</button>'
     +'</div>'
     +'<div id="pfFxBox"></div>'
