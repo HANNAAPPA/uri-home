@@ -1809,7 +1809,8 @@ function openPfEdit(){
     +'<button class="addr" onclick="addRpRow()">+ RP 추가</button>'
     +'<div class="pf-note">· 국내: 6자리 종목코드(예 005930). · 해외: 티커(예 AAPL, TSLA) — 뒤 접미사는 자동으로 찾습니다.<br>'
     +'· 평단가는 국내=원, 해외=달러 기준. · <b>해외 매입환율</b>(살 때 원/달러)을 넣으면 환차손익이 분리 계산됩니다(비우면 현재환율 적용=환차 0).<br>'
-    +'· <b>➕ 적립(추가매수)</b>: 종목의 ➕ 버튼에 이번 매수 수량·단가·환율을 넣으면 평단·매입환율이 자동으로 합쳐집니다(가중평균).<br>'
+    +'· <b>➕ 적립(추가매수)</b>: 종목의 ➕ 버튼에 이번 매수 수량·단가·환율을 넣으면 평단·매입환율이 합쳐지고(가중평균) <b>매수대금이 예수금에서 자동으로 빠집니다</b>. 해외는 달러 예수금/원화(자동환전) 중 결제한 쪽을 고르세요.<br>'
+    +'· <b>처음 사는 종목</b>도 「+ 종목 추가」로 코드·이름만 넣고 수량·단가는 ➕ 로 넣어야 예수금이 맞습니다. 표에 수량·평단을 직접 타이핑하면 예수금이 안 빠집니다.<br>'
     +'· <b>➕환전</b>: 원→달러 환전할 때마다 금액·환율을 넣으면 달러현금 평균환율이 갱신되고 현금 환차손익이 표시됩니다.</div>'
     +'<button class="pf-editbtn" style="margin-top:10px" onclick="loadPf()">← 취소</button>'
     +'</div>';
@@ -1865,10 +1866,13 @@ function pfBuyRow(btn){
   var tr=btn.closest('tr'), nx=tr.nextElementSibling;
   if(nx && nx.classList.contains('buylot')){ nx.remove(); return; }
   var isUs=tr.querySelector('.e-mk').value==='US';
+  var cur=isUs?'$':'₩';
   var sub=document.createElement('tr'); sub.className='buylot';
   sub.innerHTML='<td colspan="7"><div class="lotbox">➕ 추가매수 · '
-    +'수량<input class="b-q" type="number"> 단가('+(isUs?'$':'₩')+')<input class="b-p" type="number">'
+    +'수량<input class="b-q" type="number"> 단가('+cur+')<input class="b-p" type="number">'
     +(isUs?' 환율<input class="b-f" type="number" placeholder="예 1385">':'')
+    +' 수수료('+cur+')<input class="b-fee" type="number" placeholder="0">'
+    +(isUs?' 결제<select class="b-pay"><option value="usd">달러 예수금</option><option value="krw">원화(자동환전)</option></select>':'')
     +' <button class="lotap" onclick="pfBuyApply(this)">적용</button>'
     +' <button class="lotcx" onclick="this.closest(\'tr\').remove()">취소</button>'
     +' <span class="lotmsg"></span></div></td>';
@@ -1879,7 +1883,23 @@ function pfBuyApply(btn){
   var isUs=tr.querySelector('.e-mk').value==='US';
   var q=+sub.querySelector('.b-q').value, p=+sub.querySelector('.b-p').value;
   var f=isUs? (+ (sub.querySelector('.b-f')||{value:0}).value) : 0;
-  if(!q||!p||(isUs&&!f)){ sub.querySelector('.lotmsg').textContent='수량·단가'+(isUs?'·환율':'')+' 입력'; return; }
+  var fee=+(sub.querySelector('.b-fee')||{value:0}).value||0;
+  var msg=sub.querySelector('.lotmsg');
+  if(!q||!p||(isUs&&!f)){ msg.textContent='수량·단가'+(isUs?'·환율':'')+' 입력'; return; }
+  // 매수대금을 예수금에서 뺀다. 안 빼면 예수금이 실제보다 많게 남아 순자산이 부풀어 오른다.
+  var pay=isUs? (sub.querySelector('.b-pay')||{value:'usd'}).value : 'krw';
+  var cashEl=document.getElementById('pfCash'), usdEl=document.getElementById('pfCashUsd');
+  var amt=q*p+fee;
+  if(isUs && pay==='usd'){
+    var cu=+usdEl.value||0, nu=Math.round((cu-amt)*100)/100;
+    if(nu<0 && !confirm('달러 예수금이 $'+cu.toLocaleString()+' 뿐입니다.\n그래도 빼서 음수로 둘까요? (예수금 기록이 낡았을 수 있습니다)')) return;
+    usdEl.value=nu;
+  } else {
+    var krwAmt=Math.round(isUs? amt*f : amt);
+    var ck=+cashEl.value||0, nk=ck-krwAmt;
+    if(nk<0 && !confirm('원화 예수금이 ₩'+ck.toLocaleString()+' 뿐입니다.\n그래도 빼서 음수로 둘까요? (예수금 기록이 낡았을 수 있습니다)')) return;
+    cashEl.value=nk;
+  }
   var qty=+tr.querySelector('.e-qt').value||0, avg=+tr.querySelector('.e-av').value||0, bfx=+tr.querySelector('.e-fx').value||0;
   var nq=qty+q, navg=(avg*qty + p*q)/nq;
   tr.querySelector('.e-qt').value=nq;
