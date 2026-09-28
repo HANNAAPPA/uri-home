@@ -1,0 +1,2638 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.youtube.com https://s.ytimg.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; connect-src https://script.google.com https://script.googleusercontent.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com; media-src 'self' blob: data:; font-src 'self' data:; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="strict-origin">
+<meta name="robots" content="noindex,nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="우리집">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>우리집</title>
+<script src="shim.js"></script>
+<style>header{padding-top:env(safe-area-inset-top)}body{padding-bottom:env(safe-area-inset-bottom)}</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--line:#e5e8ee;--muted:#8a93a3;--txt:#1f2733;--blue:#2563eb;--green:#0f9d58;--red:#e5484d;--gray:#9aa3b2;--pink:#ec4899;--once:#7c3aed;}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:"Malgun Gothic","맑은 고딕",system-ui,sans-serif;}
+header{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--line);z-index:5;}
+.hd{padding:12px 18px 0;display:flex;align-items:center;gap:12px;}
+.hd h1{font-size:18px;margin:0;}
+.hd .today{color:var(--muted);font-size:13px;}
+.hd button.rf{margin-left:auto;background:var(--blue);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer;}
+.hd button.rf:disabled{opacity:.5;cursor:default;}
+.tabs{display:flex;gap:2px;padding:0 10px;overflow-x:auto;}
+.tab{background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;font-size:15px;color:var(--muted);cursor:pointer;white-space:nowrap;}
+.tab.on{color:var(--txt);border-bottom-color:var(--blue);font-weight:700;}
+.wrap{max-width:1100px;margin:0 auto;padding:18px;}
+.wrap.wide{max-width:1460px;padding:18px 14px;}   /* 🌏 여행 3단 — 좌우 여백을 줄인다 */
+.state{padding:40px;text-align:center;color:var(--muted);}
+.pane{display:none;}
+.pane.on{display:block;}
+.empty{color:var(--muted);font-size:14px;}
+h3{font-size:15px;margin:0 0 12px;}
+
+/* 홈 레이아웃 (2단) */
+.homegrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(240px,.9fr);gap:16px;align-items:start;}
+@media(max-width:720px){.homegrid{grid-template-columns:1fr;}}
+.rc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:16px;}
+.rc h3{font-size:14px;}
+
+/* 캘린더 (컴팩트) */
+.cal{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:16px;}
+.calhd{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:10px;font-size:15px;font-weight:700;}
+.calhd button{background:none;border:1px solid var(--line);border-radius:7px;width:28px;height:28px;font-size:13px;cursor:pointer;color:var(--txt);}
+.calhd button:hover{border-color:var(--blue);}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.calw{text-align:center;font-size:11px;color:var(--muted);padding:2px 0;font-weight:600;}
+.calw.sun{color:var(--red);}
+.calc{aspect-ratio:1/1;border-radius:6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
+.calc:hover{background:var(--bg);}
+.calc.empty,.calc.empty:hover{cursor:default;background:none;}
+.calc .cn{font-size:12px;}
+.calc.sun .cn{color:var(--red);}
+.calc.today{background:var(--blue);}
+.calc.today .cn{color:#fff;font-weight:700;}
+.calc.today.sun .cn{color:#fff;}
+.calc.sel{outline:2px solid var(--blue);outline-offset:-2px;}
+.caldots{display:flex;gap:2px;}
+.dot{width:4px;height:4px;border-radius:50%;background:var(--pink);}
+.calc.today .dot{background:#fff;}
+.daypanel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;}
+.daypanel h4{margin:0 0 6px;font-size:13px;}
+.dpev{padding:5px 0;border-top:1px solid var(--line);font-size:13px;display:flex;gap:8px;}
+.dpev:first-of-type{border-top:0;}
+.dpev .tm{color:var(--muted);width:44px;flex:none;}
+.dpadd{display:flex;gap:5px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);}
+.dpadd input[type=time]{width:88px;flex:none;}
+.dpadd input[type=text]{flex:1;min-width:0;}
+.dpadd input{border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:13px;}
+.dpadd button{background:var(--pink);color:#fff;border:0;border-radius:7px;width:34px;flex:none;font-size:16px;cursor:pointer;}
+.dpadd button:disabled{opacity:.5;}
+
+/* 다가오는 일정 */
+.leg{display:flex;gap:12px;margin:-2px 0 8px;font-size:11px;color:var(--muted);}
+.leg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+.leg .lb{background:var(--txt);}
+.leg .lo{background:var(--once);}
+.up{display:flex;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:13px;align-items:baseline;}
+.up:first-of-type{border-top:0;}
+.up .ud{width:70px;flex:none;font-weight:600;}
+.up .ut{color:var(--muted);width:38px;flex:none;font-size:12px;}
+.up .un{flex:1;}
+.up .un.once,.dpev .once{color:var(--once);}
+
+/* 기념일 */
+.ddrow{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line);}
+.ddrow:first-of-type{border-top:0;}
+.ddbadge{flex:none;min-width:48px;text-align:center;font-weight:700;font-size:12px;padding:3px 6px;border-radius:7px;background:var(--bg);color:var(--muted);}
+.ddbadge.dsoon{background:#fef3c7;color:#b45309;}
+.ddbadge.dnow{background:var(--red);color:#fff;}
+.ddname{flex:1;font-size:14px;}
+.ddname .yrs{color:var(--pink);font-size:11px;margin-left:5px;}
+.dddate{color:var(--muted);font-size:12px;}
+.ddx{background:none;border:0;color:var(--gray);font-size:17px;cursor:pointer;line-height:1;padding:0 3px;}
+.ddx:hover{color:var(--red);}
+.ddadd{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);}
+.ddadd input[type=text]{flex:1;min-width:100px;}
+.ddadd input{border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:13px;}
+.ddadd label{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);}
+.ddadd button{background:var(--pink);color:#fff;border:0;border-radius:7px;padding:6px 12px;font-size:13px;cursor:pointer;}
+
+/* 공유 메모 */
+.memo textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;resize:vertical;}
+.memobar{display:flex;align-items:center;gap:10px;margin-top:8px;}
+.memobar button{background:var(--blue);color:#fff;border:0;border-radius:8px;padding:7px 16px;font-size:14px;cursor:pointer;}
+.memobar button:disabled{opacity:.5;}
+.memobar .mt{color:var(--muted);font-size:12px;}
+
+/* 키즈카페 */
+.fclty{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px;}
+.fclty h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+.fclty h2 a{color:var(--blue);text-decoration:none;font-size:12px;font-weight:600;border:1px solid var(--blue);border-radius:6px;padding:3px 8px;}
+.fclty h2 a:hover{background:var(--blue);color:#fff;}
+.row{display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--line);align-items:baseline;flex-wrap:wrap;}
+.row:first-of-type{border-top:0;}
+.date{width:120px;flex:none;font-weight:600;font-size:14px;}
+.dow{color:var(--muted);font-weight:400;font-size:12px;margin-left:4px;}
+.slots{display:flex;gap:8px;flex-wrap:wrap;}
+.slot{border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:13px;white-space:nowrap;text-decoration:none;color:inherit;}
+a.slot:hover{border-color:var(--blue);}
+.slot b{font-weight:600;}
+.slot .t{color:var(--muted);margin:0 4px;}
+.left{color:var(--green);font-weight:700;}
+.left.low{color:#d97706;}
+.full{color:var(--red);font-weight:700;}
+.prog,.holi{color:var(--gray);}
+
+/* 아이 */
+.wk{margin-bottom:20px;}
+.wk h3{color:var(--pink);}
+.ev{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:baseline;}
+.ev .d{width:96px;flex:none;font-weight:600;font-size:14px;}
+.ev .tm{width:52px;flex:none;color:var(--muted);font-size:13px;}
+.ev .ttl{font-size:15px;}
+.hint{background:#fdf2f8;border:1px solid #fbcfe8;border-radius:12px;padding:14px 16px;font-size:13px;color:#9d174d;margin-bottom:16px;line-height:1.6;}
+.hint b{color:#831843;}
+
+/* 부동산 */
+.setup{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;line-height:1.8;font-size:14px;}
+.setup h3{font-size:17px;}
+.setup ol{margin:0;padding-left:20px;}
+.setup a{color:var(--blue);}
+.aptcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px;}
+.aptcard h2{font-size:16px;margin:0 0 12px;}
+.deal{display:flex;gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;align-items:baseline;}
+.deal:first-of-type{border-top:0;}
+.deal .dd{width:96px;flex:none;color:var(--muted);}
+.deal .amt{font-weight:700;width:110px;flex:none;}
+.deal .meta{color:var(--muted);font-size:13px;}
+@media(max-width:560px){.date{width:100%}.ev .ttl{flex:1}}
+
+/* 📈 포트폴리오 */
+.pf-top{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.pf-top .net{font-size:15px;color:var(--muted);}
+.pf-top .net b{font-size:22px;color:var(--txt);margin-left:6px;}
+.pf-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+@media(max-width:820px){.pf-tiles{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:480px){.pf-tiles{grid-template-columns:repeat(2,1fr);}}
+.pf-tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;}
+.pf-tile .lab{font-size:12px;color:var(--muted);margin-bottom:6px;}
+.pf-tile .val{font-size:18px;font-weight:800;}
+.pf-tile .tsub{font-size:11px;color:var(--muted);margin-top:3px;}
+.pf-tile.hl{background:#ecfdf3;border-color:#bbf7d0;}
+.pos{color:var(--red);}   /* +손익=빨강(국내 관행) */
+.neg{color:var(--blue);} /* -손익=파랑 */
+.pf-analysis{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;}
+@media(max-width:760px){.pf-analysis{grid-template-columns:1fr;}}
+.pf-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;}
+.pf-card h3{font-size:14px;}
+.donut-wrap{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+.legend{flex:1;min-width:150px;font-size:13px;}
+.legend .lgr{display:flex;align-items:center;gap:7px;padding:3px 0;}
+.legend .sw{width:10px;height:10px;border-radius:3px;flex:none;}
+.legend .lgn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.legend .lgp{color:var(--muted);margin-left:6px;}
+.legend .lgv{color:var(--txt);font-weight:600;margin-left:8px;}
+.barrow{display:flex;align-items:center;gap:8px;font-size:13px;padding:4px 0;}
+.barrow .bn{width:120px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.barrow .bt{flex:1;background:var(--bg);border-radius:5px;height:16px;position:relative;overflow:hidden;}
+.barrow .bf{position:absolute;top:0;bottom:0;border-radius:5px;}
+.barrow .bv{width:64px;flex:none;text-align:right;font-weight:600;}
+.pf-sech{font-size:13px;color:var(--muted);margin:6px 0 8px;font-weight:700;}
+.pf-sum{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.pf-sum.pf-sum3{grid-template-columns:1fr 1fr 1fr;}
+@media(max-width:560px){.pf-sum.pf-sum3{grid-template-columns:1fr;}}
+.pf-sum .b{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;}
+.pf-sum .b .lab{font-size:12px;color:var(--muted);}
+.pf-sum .b .val{font-size:16px;font-weight:800;}
+.pf-tbl{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:13px;margin-bottom:18px;}
+.pf-tbl th,.pf-tbl td{padding:9px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;}
+.pf-tbl th{background:#f8fafc;color:var(--muted);font-weight:600;font-size:12px;}
+.pf-tbl td.nm,.pf-tbl th.nm{text-align:left;font-weight:600;}
+.pf-tbl tr:last-child td{border-bottom:0;}
+.pf-tbl .noqt{color:var(--gray);}
+.pf-scroll{overflow-x:auto;}
+.pf-editbtn{background:none;border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer;color:var(--txt);}
+.pf-editbtn:hover{border-color:var(--blue);}
+.pf-edit{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:18px;}
+.pf-edit table{width:100%;border-collapse:collapse;font-size:13px;}
+.pf-edit th,.pf-edit td{padding:5px 4px;border-bottom:1px solid var(--line);}
+.pf-edit th{color:var(--muted);font-size:11px;font-weight:600;text-align:left;}
+.pf-edit input,.pf-edit select{border:1px solid var(--line);border-radius:6px;padding:5px 6px;font-size:13px;width:100%;font-family:inherit;}
+.pf-edit .delx{background:none;border:0;color:var(--gray);font-size:16px;cursor:pointer;}
+.pf-edit .delx:hover{color:var(--red);}
+.buyb{background:none;border:1px solid var(--line);border-radius:6px;color:var(--green);font-size:12px;cursor:pointer;padding:3px 6px;margin-right:4px;}
+.buyb:hover{border-color:var(--green);}
+.buylot td{background:#f0faf3;}
+.lotbox{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--txt);padding:2px 0;}
+.lotbox input{width:88px;border:1px solid var(--line);border-radius:6px;padding:5px 6px;font-size:13px;}
+.lotbox .lotap{background:var(--green);color:#fff;border:0;border-radius:6px;padding:5px 12px;cursor:pointer;}
+.lotbox .lotcx{background:none;border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--muted);}
+.lotbox .lotmsg{color:var(--red);font-size:12px;}
+#pfFxBox .lotbox{margin-top:8px;}
+.pf-editbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;}
+.pf-editbar .cashin{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);}
+.pf-editbar .cashin input{border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:13px;width:130px;text-align:right;}
+.pf-editbar .save{background:var(--blue);color:#fff;border:0;border-radius:8px;padding:8px 16px;font-size:14px;cursor:pointer;margin-left:auto;}
+.pf-editbar .addr{background:var(--green);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;}
+.pf-note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6;}
+
+/* 📈 성과 추이 (내 계좌 vs 시장) */
+.pf-tiles.t3{grid-template-columns:repeat(3,1fr);}
+.pf-tiles.t5{grid-template-columns:repeat(5,1fr);}
+@media(max-width:1000px){.pf-tiles.t5{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:640px){.pf-tiles.t5{grid-template-columns:repeat(2,1fr);}}
+.pf-tiles.t6{grid-template-columns:repeat(6,1fr);}
+@media(max-width:1100px){.pf-tiles.t6{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:640px){.pf-tiles.t6{grid-template-columns:repeat(2,1fr);}}
+.pf-tiles.t7{grid-template-columns:repeat(4,1fr);}
+@media(max-width:1100px){.pf-tiles.t7{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:640px){.pf-tiles.t7{grid-template-columns:repeat(2,1fr);}}
+.rp-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0;}
+.rp-row input{padding:5px 7px;border:1px solid #d4d4d8;border-radius:6px;font-size:13px;}
+.rp-row .rp-nm{width:120px} .rp-row .rp-am{width:110px}
+.rp-row .rp-rt{width:66px} .rp-row .rp-st{width:130px} .rp-row .rp-dy{width:64px}
+.rp-row .rp-lb{font-size:12px;color:#71717a}
+.hs-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:18px;}
+.hs-hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px;}
+.hs-hd h3{margin:0;font-size:14px;}
+.hs-hd .sub{font-size:12px;color:var(--muted);}
+.hs-hd .acts{margin-left:auto;display:flex;gap:6px;}
+.hs-hd .acts button{background:none;border:1px solid var(--line);border-radius:7px;padding:4px 10px;font-size:12px;cursor:pointer;color:var(--muted);font-family:inherit;}
+.hs-hd .acts button:hover{border-color:var(--blue);color:var(--txt);}
+.hs-hd .acts button.on{background:#ede9fe;border-color:#c4b5fd;color:#5b21b6;font-weight:700;}
+.hs-leg{display:flex;gap:16px;flex-wrap:wrap;margin:10px 0 2px;font-size:13px;}
+.hs-leg .it{display:flex;align-items:center;gap:6px;}
+.hs-leg .sw{width:14px;height:3px;border-radius:2px;flex:none;}
+.hs-leg .nm{color:var(--muted);}
+.hs-leg .vl{font-weight:800;}
+.hs-plot{position:relative;margin-top:4px;}
+.hs-plot svg{display:block;width:100%;height:auto;overflow:visible;}
+/* 좁은 화면에서 통째로 줄이면 글씨가 안 보인다 — 카드 안에서 가로로 넘긴다 */
+@media(max-width:700px){
+  .hs-plot{overflow-x:auto;overflow-y:hidden;}
+  .hs-plot svg{min-width:700px;}
+}
+.hs-tip{position:absolute;pointer-events:none;background:#1f2733;color:#fff;border-radius:9px;padding:8px 11px;font-size:12px;line-height:1.65;white-space:nowrap;opacity:0;transition:opacity .12s;z-index:3;box-shadow:0 4px 14px rgba(0,0,0,.18);}
+.hs-tip.on{opacity:1;}
+.hs-tip b{font-size:12.5px;}
+.hs-tip .tl{display:flex;align-items:center;gap:6px;}
+.hs-tip .tl .d{width:8px;height:8px;border-radius:50%;flex:none;}
+.hs-tip .tl .k{opacity:.75;}
+.hs-tip .tl .v{margin-left:auto;font-weight:700;padding-left:12px;}
+.hs-tip .ex{opacity:.7;font-size:11px;margin-top:3px;border-top:1px solid rgba(255,255,255,.2);padding-top:3px;}
+.hs-tb{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px;}
+.hs-tb th,.hs-tb td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;}
+.hs-tb th{background:#f8fafc;color:var(--muted);font-weight:600;font-size:11.5px;}
+.hs-tb td.m,.hs-tb th.m{text-align:left;font-weight:700;}
+.hs-tb input{border:1px solid var(--line);border-radius:6px;padding:4px 6px;font-size:12.5px;width:112px;text-align:right;font-family:inherit;}
+.hs-tb input.fl{width:88px;}
+.hs-tb tr.cur td{background:#f5f3ff;}
+.hs-tb .sv{background:var(--blue);color:#fff;border:0;border-radius:6px;padding:4px 9px;font-size:12px;cursor:pointer;font-family:inherit;}
+.hs-note{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.65;}
+.hs-warn{background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:8px 11px;font-size:12.5px;color:#92400e;margin-top:10px;}
+
+/* 여행 */
+.tv-hero{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:16px;padding:16px 18px;margin-bottom:16px;}
+.tv-hero h2{margin:0;font-size:19px;}
+.tv-hero .sub{opacity:.85;font-size:13px;margin-top:3px;}
+.tv-dday{float:right;text-align:center;background:rgba(255,255,255,.18);border-radius:12px;padding:7px 14px;font-weight:800;font-size:17px;}
+/* 맨 위 항공·숙소 | 예산 · 맨 아래 메모·준비물·참고 */
+.tv-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;align-items:start;}
+.tv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start;margin-top:6px;}
+/* 📅 날짜 탭 */
+.tv-dtabs{display:flex;gap:8px;margin:4px 0 12px;}
+.tv-dtabs button{flex:1;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:8px 6px;cursor:pointer;
+  font-family:inherit;color:var(--txt);display:flex;flex-direction:column;align-items:center;gap:1px;position:relative;}
+.tv-dtabs button b{font-size:14px;}
+.tv-dtabs button small{font-size:11px;color:var(--muted);}
+.tv-dtabs button span{position:absolute;top:5px;right:8px;font-size:10px;color:var(--muted);}
+.tv-dtabs button.on{background:var(--blue);border-color:var(--blue);color:#fff;}
+.tv-dtabs button.on small,.tv-dtabs button.on span{color:rgba(255,255,255,.85);}
+.tv-dpane.hide{display:none;}
+.tv-dgrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;align-items:start;}
+.tv-go{display:inline-block;margin-top:4px;font-size:11.5px;color:var(--blue);text-decoration:none;
+  background:#eef4ff;border-radius:6px;padding:2px 7px;}
+.tv-dpane .tv-sug .sw{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer;}
+.tv-dpane .tv-sug .sw.open{display:block;}
+.tv-wish .wp{background:none;border:1px solid var(--line);border-radius:6px;font-size:11px;padding:2px 6px;
+  cursor:pointer;color:var(--blue);flex:none;font-family:inherit;}
+@media(max-width:900px){
+  .tv-dgrid,.tv-grid{grid-template-columns:1fr;}
+}
+@media(max-width:700px){
+  .tv-top{grid-template-columns:1fr;}
+}
+/* 💰 예산 */
+.tv-cost{display:flex;align-items:baseline;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px;}
+.tv-cost:first-of-type{border-top:0;}
+.tv-cost .cn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tv-cost .ca{font-weight:700;flex:none;font-variant-numeric:tabular-nums;}
+.tv-cost .cw{color:var(--muted);font-size:11px;flex:none;}
+.tv-costsum{margin-top:10px;padding-top:9px;border-top:2px solid var(--line);}
+.tv-costsum .row{display:flex;align-items:baseline;gap:8px;font-size:13px;color:var(--muted);margin-bottom:3px;}
+.tv-costsum .row b{margin-left:auto;color:var(--txt);font-variant-numeric:tabular-nums;}
+.tv-costsum .tot{font-size:15px;color:var(--txt);font-weight:700;margin-top:6px;}
+.tv-costsum .tot b{font-size:18px;color:var(--blue);}
+.tv-fxnote{font-size:11px;color:var(--gray);margin-top:6px;}
+.tv-bar{height:7px;border-radius:99px;background:#e2e8f0;overflow:hidden;margin:9px 0 5px;}
+.tv-bar i{display:block;height:100%;background:var(--blue);border-radius:99px;}
+.tv-bar.over i{background:var(--red);}
+.tv-bg{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);margin-top:8px;
+       padding-top:8px;border-top:1px dashed var(--line);}
+.tv-bg input{flex:1;min-width:0;border:1px solid var(--line);border-radius:7px;padding:4px 7px;
+             font-size:12px;text-align:right;font-family:inherit;}
+.tv-bg button{background:#eff6ff;color:#1d4ed8;border:0;border-radius:7px;padding:4px 9px;font-size:11.5px;cursor:pointer;font-weight:700;}
+.tv-add select{border:1px solid var(--line);border-radius:7px;padding:6px 6px;font-size:13px;font-family:inherit;flex:none;}
+.tv-add input.am{flex:none;width:96px;text-align:right;}
+.tv-fl{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);flex-wrap:wrap;}
+.tv-fl:first-of-type{border-top:0;}
+.tv-fl .no{background:#eff6ff;color:var(--blue);border-radius:6px;padding:3px 7px;font-size:12px;font-weight:700;flex:none;}
+.tv-fl .leg2{font-size:15px;font-weight:700;}
+.tv-fl .ap{color:var(--muted);font-size:12px;}
+.tv-fl .meta2{color:var(--muted);font-size:12px;margin-left:auto;}
+.tv-hotel{font-size:14px;line-height:1.6;}
+.tv-hotel a{color:var(--blue);text-decoration:none;}
+.tv-day{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:14px;}
+.tv-route-wrap{margin:2px 0 12px;}
+.tv-map{height:250px;border-radius:12px;border:1px solid var(--line);overflow:hidden;background:#eef2f6;z-index:0;}
+.tv-map .leaflet-tile-pane{filter:saturate(.45) brightness(1.04);}
+.tv-map .leaflet-tooltip.tv-lb{background:rgba(255,255,255,.92);border:0;box-shadow:0 1px 3px rgba(0,0,0,.18);
+  padding:1px 6px;font-size:11px;font-weight:600;color:var(--txt);border-radius:6px;}
+.tv-map .leaflet-tooltip.tv-lb:before{display:none;}
+.tv-pin{width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);}
+.tv-pin{transform:translate(-50%,-50%);}
+.tv-pin.w{width:auto;min-width:22px;padding:0 5px;border-radius:11px;}
+.tv-pin.air{background:var(--muted);}
+.tv-ant{stroke-dasharray:8 10;animation:tvAnt 1.1s linear infinite;}
+@keyframes tvAnt{to{stroke-dashoffset:-18;}}
+.tv-mapbar{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12px;color:var(--muted);flex-wrap:wrap;}
+.tv-mapbar a{margin-left:auto;color:var(--blue);text-decoration:none;font-weight:600;}
+.tv-dhd{display:flex;align-items:baseline;gap:8px;margin-bottom:8px;}
+.tv-dhd b{font-size:15px;}
+.tv-dhd span{color:var(--muted);font-size:12px;}
+.tv-it{display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--line);align-items:baseline;}
+.tv-it:first-of-type{border-top:0;}
+.tv-it .tt{width:46px;flex:none;color:var(--blue);font-weight:700;font-size:13px;}
+.tv-it .bd{flex:1;min-width:0;}
+.tv-it .bd .t1{font-size:14px;}
+.tv-it .bd .t2{color:var(--muted);font-size:12px;margin-top:2px;white-space:pre-wrap;}
+.tv-it .by{color:var(--gray);font-size:11px;flex:none;}
+.tv-x{background:none;border:0;color:var(--gray);font-size:16px;cursor:pointer;line-height:1;padding:0 2px;flex:none;}
+.tv-x:hover{color:var(--red);}
+.tv-add{display:flex;gap:5px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);flex-wrap:wrap;}
+.tv-add input[type=time]{width:86px;flex:none;}
+.tv-add input.ti{flex:1;min-width:110px;}
+.tv-add input.me{flex:1;min-width:90px;}
+.tv-add input{border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:13px;}
+.tv-add button{background:var(--blue);color:#fff;border:0;border-radius:7px;padding:6px 12px;font-size:13px;cursor:pointer;}
+.tv-sug{padding:9px 0;border-top:1px solid var(--line);}
+.tv-sug:first-of-type{border-top:0;}
+.tv-sug.took{opacity:.5;}
+.tv-sug .sh{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;}
+.tv-sug .sh b{font-size:14px;}
+.tv-sug .tg{font-size:10px;background:#eef2ff;color:#4338ca;border-radius:20px;padding:2px 7px;font-weight:700;flex:none;}
+.tv-sug .tg.kid{background:#fef3c7;color:#92400e;}
+.tv-sug .tg.tm{background:#f1f5f9;color:#475569;}
+.tv-sug .sw{font-size:12px;color:var(--muted);margin:3px 0 6px;line-height:1.5;}
+.tv-sug .sb{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.tv-sug .sb a{font-size:11px;border:1px solid var(--line);border-radius:20px;padding:3px 9px;color:var(--blue);text-decoration:none;}
+.tv-sug .sb button{font-size:11px;border:0;border-radius:20px;padding:4px 10px;cursor:pointer;background:#eff6ff;color:#1d4ed8;font-weight:700;}
+.tv-sug .sb button.w{background:#fdf2f8;color:#be185d;}
+.tv-sug .sb button.x{background:none;color:var(--gray);padding:4px 4px;font-weight:400;}
+.tv-sug .sb .dn{font-size:11px;color:var(--gray);}
+.tv-sgh{font-size:11px;font-weight:800;color:var(--muted);margin:12px 0 2px;letter-spacing:.3px;}
+.tv-sgh:first-child{margin-top:0;}
+.tv-sgfoot{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;color:var(--gray);}
+.tv-sgfoot button{background:none;border:0;color:var(--blue);font-size:11px;cursor:pointer;padding:0;}
+.tv-wish{display:flex;gap:8px;padding:8px 0;border-top:1px solid var(--line);align-items:center;}
+.tv-wish:first-of-type{border-top:0;}
+.tv-wish .lk{background:#fdf2f8;border:1px solid #fbcfe8;color:#be185d;border-radius:20px;padding:3px 9px;font-size:12px;font-weight:700;cursor:pointer;flex:none;}
+.tv-wish .wn{flex:1;min-width:0;font-size:14px;}
+.tv-wish .wn small{color:var(--muted);font-size:11px;display:block;margin-top:1px;}
+.tv-wish .wl{flex:none;text-decoration:none;color:var(--blue);font-size:14px;padding:0 2px;}
+.tv-pk{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line);font-size:14px;}
+.tv-pk:first-of-type{border-top:0;}
+.tv-pk input{width:17px;height:17px;}
+.tv-pk .pn{flex:1;}
+.tv-pk.done .pn{color:var(--gray);text-decoration:line-through;}
+.tv-who{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-bottom:10px;}
+.tv-who select{border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-size:12px;}
+.tv-tip{background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:12px 14px;font-size:13px;color:#075985;line-height:1.7;}
+/* 접기/펼치기 (tvSec) — 여행 탭 전 섹션 공용 */
+.fh{display:flex;align-items:center;gap:8px;cursor:pointer;-webkit-user-select:none;user-select:none;
+    font-size:14px;font-weight:700;color:var(--txt);padding:2px 0;-webkit-tap-highlight-color:transparent;}
+.fh .cv{font-size:10px;color:var(--muted);transition:transform .18s;flex:0 0 auto;}
+.fh.cl .cv{transform:rotate(-90deg);}
+.fh .cnt{margin-left:auto;background:#e2e8f0;color:#475569;font-size:11px;font-weight:700;
+         border-radius:999px;padding:1px 8px;flex:0 0 auto;}
+.fb{margin-top:11px;}
+.fb.hide{display:none;}
+/* 📌 맨 위 요약 토글 */
+.tv-brief{margin-bottom:16px;}
+.tv-brief-h{font-size:12px;font-weight:700;color:#64748b;letter-spacing:.02em;margin:0 2px 7px;}
+.tv-brief .bf-rc{margin-bottom:8px;}
+.bf{font-size:13px;line-height:1.65;color:#334155;}
+.bf p{margin:0 0 9px;}
+.bf-key{background:#eff6ff;border-left:3px solid #2563eb;border-radius:0 8px 8px 0;padding:9px 11px;color:#1e3a8a;}
+.bf-warn{background:#fff7ed;border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:8px 11px;color:#7c2d12;font-size:12.5px;}
+.bf-sub{color:#64748b;font-size:12px;}
+.bf-ln{display:inline-block;background:#fde68a;color:#78350f;border-radius:5px;padding:0 5px;font-size:11.5px;font-weight:700;}
+.bf-ol{margin:0 0 9px;padding-left:20px;}
+.bf-ol li{margin-bottom:6px;}
+.bf-t{width:100%;border-collapse:collapse;margin:0 0 10px;font-size:12.5px;}
+.bf-t th{background:#f1f5f9;color:#475569;font-weight:700;text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;white-space:nowrap;}
+.bf-t td{padding:6px 8px;border-bottom:1px solid #f1f5f9;vertical-align:top;}
+.bf-t tr td:first-child{white-space:nowrap;color:#64748b;font-variant-numeric:tabular-nums;}
+@media(max-width:760px){.bf-t{font-size:12px;}.bf-t th,.bf-t td{padding:5px 6px;}}
+.bf-st{border:1px solid #e2e8f0;border-radius:8px;margin:0 0 6px;background:#fff;}
+.bf-st summary{list-style:none;cursor:pointer;padding:7px 9px;font-size:12.5px;line-height:1.4;display:flex;gap:7px;align-items:center;}
+.bf-st summary::-webkit-details-marker{display:none;}
+.bf-st summary::after{content:'▾';margin-left:auto;padding-left:6px;color:#94a3b8;font-size:11px;flex:none;}
+.bf-st[open] summary{border-bottom:1px dashed #e2e8f0;}
+.bf-st[open] summary::after{content:'▴';}
+.bf-st summary .bf-ln{font-size:10.5px;line-height:1.5;vertical-align:middle;}
+.bf-tm{color:#64748b;font-variant-numeric:tabular-nums;font-size:11.5px;min-width:36px;flex:none;}
+.bf-sb{padding:7px 9px 9px 52px;font-size:12px;color:#334155;line-height:1.55;}
+.bf-mp{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
+.bf-mp a{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;border-radius:999px;padding:3px 9px;font-size:11.5px;line-height:1.4;text-decoration:none;}
+@media(max-width:760px){.bf-sb{padding-left:9px;}}
+
+/* 매도 성과 */
+.sell-card h3{display:flex;align-items:center;gap:8px}
+.sell-add{margin-left:auto;border:1px solid #2563eb;background:#fff;color:#2563eb;
+          border-radius:8px;padding:3px 10px;font-size:12px;cursor:pointer;font-family:inherit}
+.sell-add:hover{background:#2563eb;color:#fff}
+.sell-tb{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:6px}
+.sell-tb th{background:#f1f5f9;padding:6px 8px;text-align:left;font-size:12px;color:#475569;
+            border-bottom:1px solid #e2e8f0;white-space:nowrap}
+.sell-tb td{padding:6px 8px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+.sell-tb .r{text-align:right;white-space:nowrap}
+.sell-memo{font-size:11px;color:#94a3b8;margin-top:2px}
+.mk-us{font-size:10px;background:#e0e7ff;color:#3730a3;border-radius:4px;padding:0 4px}
+.sell-del{border:none;background:none;color:#cbd5e1;cursor:pointer;font-size:13px}
+.sell-del:hover{color:#dc2626}
+.sell-more{padding:7px 2px;font-size:12.5px;color:#2563eb;cursor:pointer;user-select:none}
+.sell-modal{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:300;
+            display:flex;align-items:center;justify-content:center;padding:16px}
+.sell-box{background:#fff;border-radius:14px;padding:18px 20px;width:min(560px,96vw);
+          max-height:92vh;overflow-y:auto}
+.sell-box h3{margin:0 0 12px}
+.sell-box label{display:block;font-size:12px;color:#475569;margin-bottom:9px}
+.sell-box input,.sell-box select{width:100%;margin-top:3px;padding:7px 9px;border:1px solid #cbd5e1;
+                                 border-radius:7px;font-size:13px;font-family:inherit}
+.sf-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.sf-chk{display:flex;align-items:center;gap:6px}
+.sf-chk input{width:auto;margin:0}
+.sf-btns{display:flex;gap:8px;margin-top:6px}
+.sf-btns button{flex:1;padding:9px;border-radius:8px;border:1px solid #cbd5e1;
+                background:#fff;font-size:13px;cursor:pointer;font-family:inherit}
+.sf-btns .ok{background:#2563eb;color:#fff;border-color:#2563eb;font-weight:600}
+@media(max-width:560px){.sf-grid{grid-template-columns:1fr}}
+/* 🗣 아빠표영어 */
+.eg-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.eg-star{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:10px 14px;font-size:15px}
+.eg-star b{font-size:22px;color:#ea580c}
+.eg-week{display:flex;gap:6px}
+.eg-week span{display:flex;flex-direction:column;align-items:center;font-size:11px;color:var(--muted);gap:2px}
+.eg-week i{font-style:normal;font-size:18px}
+.eg-add{display:flex;gap:8px;margin-bottom:14px}
+.eg-add input{flex:1;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;font-size:14px}
+.eg-add button,.eg-btn{border:none;background:#2563eb;color:#fff;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:700;cursor:pointer}
+.eg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.eg-card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;position:relative}
+.eg-card img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#e5e7eb}
+.eg-card .t{padding:8px 10px 2px;font-size:13px;font-weight:700;line-height:1.35;max-height:2.8em;overflow:hidden}
+.eg-card .s{padding:0 10px 9px;font-size:11.5px;color:var(--muted)}
+.eg-card .x{position:absolute;top:6px;right:6px;border:none;background:rgba(0,0,0,.55);color:#fff;border-radius:50%;width:26px;height:26px;cursor:pointer}
+.eg-back{border:none;background:none;color:#2563eb;font-size:14px;cursor:pointer;padding:4px 0;margin-bottom:6px}
+.eg-pw{position:relative;width:100%;max-width:820px;margin:0 auto;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden}
+.eg-pw iframe,.eg-pw #egPlayer{position:absolute;inset:0;width:100%;height:100%}
+.eg-modes{display:flex;gap:6px;margin:12px auto;max-width:820px;flex-wrap:wrap}
+.eg-modes button{flex:1;min-width:90px;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:11px 6px;font-size:14px;font-weight:700;cursor:pointer}
+.eg-modes button.on{background:#1f2733;color:#fff;border-color:#1f2733}
+.eg-panel{max-width:820px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.eg-opts{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:13.5px;margin-bottom:12px;align-items:center}
+.eg-opts label{display:flex;align-items:center;gap:5px}
+.eg-chip{display:inline-flex;gap:4px}
+.eg-chip button{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer}
+.eg-chip button.on{background:#2563eb;color:#fff;border-color:#2563eb}
+.eg-go{width:100%;font-size:20px;padding:16px;border-radius:14px;border:none;background:#16a34a;color:#fff;font-weight:800;cursor:pointer}
+.eg-cut{width:100%;font-size:19px;padding:16px;border-radius:14px;border:none;background:#ea580c;color:#fff;font-weight:800;cursor:pointer;margin-bottom:10px}
+.eg-segs{max-height:340px;overflow:auto;margin-top:8px}
+.eg-seg{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:13px}
+.eg-seg.on{background:#eff6ff}
+.eg-seg .tm{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;min-width:86px}
+.eg-seg input{flex:1;min-width:0;padding:6px 8px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px}
+.eg-seg button{border:1px solid #e2e8f0;background:#fff;border-radius:7px;padding:5px 7px;font-size:12px;cursor:pointer}
+.eg-seg .tx{flex:1;cursor:pointer}
+.eg-note{font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px}
+/* 따라 말하기 화면 — 아이가 보는 곳이라 크게 */
+.eg-turn{position:fixed;inset:0;z-index:400;background:rgba(15,23,42,.88);display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:24px}
+.eg-turn.on{display:flex}
+.eg-turn .msg{font-size:34px;font-weight:800;margin-bottom:14px}
+.eg-turn .sen{font-size:26px;font-weight:700;color:#fde68a;max-width:90vw;line-height:1.35;margin-bottom:22px;min-height:1em}
+.eg-turn .heard{font-size:18px;color:#cbd5e1;min-height:1.4em;margin-top:14px}
+.eg-turn .heard b{color:#86efac}
+.eg-mic{width:150px;height:150px;border-radius:50%;background:#ef4444;display:flex;align-items:center;justify-content:center;font-size:66px;box-shadow:0 0 0 0 rgba(239,68,68,.5);transition:box-shadow .08s linear}
+.eg-mic.done{background:#22c55e}
+.eg-mic.play{background:#3b82f6}
+.eg-turn .row{display:flex;gap:12px;margin-top:26px}
+.eg-turn .row button{border:none;border-radius:14px;padding:14px 20px;font-size:18px;font-weight:800;cursor:pointer}
+.eg-turn .again{background:#fbbf24;color:#1f2733}
+.eg-turn .next{background:#22c55e;color:#fff}
+.eg-turn .quit{background:#475569;color:#fff}
+.eg-burst{font-size:60px;min-height:72px;letter-spacing:6px}
+@keyframes egPop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.25);opacity:1}100%{transform:scale(1)}}
+.eg-burst.go{animation:egPop .55s ease-out}
+</style></head>
+<body>
+<header>
+  <div class="hd">
+    <h1>🏠 가정 경영 대시보드</h1>
+    <span class="today" id="today"></span>
+    <button class="rf" id="refresh" onclick="reloadCurrent()">새로고침</button>
+  </div>
+  <div class="tabs">
+    <button class="tab on" data-tab="home" onclick="switchTab('home')">🏠 홈</button>
+    <button class="tab" data-tab="kids" onclick="switchTab('kids')">🧸 키즈카페</button>
+    <button class="tab" data-tab="child" onclick="switchTab('child')">📅 아이</button>
+    <button class="tab" data-tab="trip" onclick="switchTab('trip')">🌏 여행</button>
+    <button class="tab" data-tab="estate" onclick="switchTab('estate')">🏢 부동산</button>
+    <button class="tab" data-tab="pf" onclick="switchTab('pf')">📈 포트폴리오</button>
+    <button class="tab" data-tab="eng" onclick="switchTab('eng')">🗣 영어</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="pane on" id="pane-home"><div class="state">불러오는 중…</div></div>
+  <div class="pane" id="pane-kids"><div class="state">불러오는 중… (지점이 많아 20초쯤 걸려요)</div></div>
+  <div class="pane" id="pane-child"><div class="state">불러오는 중…</div></div>
+  <div class="pane" id="pane-trip"><div class="state">불러오는 중…</div></div>
+  <div class="pane" id="pane-estate"><div class="state">불러오는 중…</div></div>
+  <div class="pane" id="pane-pf"><div class="state">불러오는 중…</div></div>
+  <div class="pane" id="pane-eng"><div class="state">불러오는 중…</div></div>
+</div>
+
+<script>
+var DOW=["일","월","화","수","목","금","토"];
+var loaded={home:false,kids:false,child:false,estate:false,pf:false,eng:false};
+var current="home";
+function p2(n){return ('0'+n).slice(-2);}
+
+function switchTab(t){
+  current=t;
+  if(t!=="eng"&&typeof egStop==="function") egStop();
+  ["home","kids","child","trip","estate","pf","eng"].forEach(function(k){
+    document.getElementById("pane-"+k).classList.toggle("on",k===t);
+  });
+  document.querySelectorAll(".tab").forEach(function(b){b.classList.toggle("on",b.dataset.tab===t);});
+  document.querySelector(".wrap").classList.toggle("wide",t==="trip");
+  if(!loaded[t]) loadTab(t);
+}
+function reloadCurrent(){ loadTab(current); }
+function loadTab(t){
+  if(t==="home") loadHome();
+  else if(t==="kids") loadKids();
+  else if(t==="child") loadChild();
+  else if(t==="trip") loadTrip();
+  else if(t==="estate") loadEstate();
+  else if(t==="pf") loadPf();
+  else if(t==="eng") loadEng();
+}
+function busy(on){var b=document.getElementById("refresh");b.disabled=on;b.textContent=on?"조회 중…":"새로고침";}
+
+/* ── 🏠 홈 ── */
+var homeY,homeM,homeEvents={},selDate=null,pendingSel=null;
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function loadHome(){
+  if(!homeY){var n=new Date();homeY=n.getFullYear();homeM=n.getMonth()+1;}
+  busy(true);
+  document.getElementById("pane-home").innerHTML='<div class="state">불러오는 중…</div>';
+  google.script.run.withSuccessHandler(function(d){
+    document.getElementById("today").textContent=d.today+" 기준";
+    renderHome(d);loaded.home=true;busy(false);
+  }).withFailureHandler(function(e){
+    document.getElementById("pane-home").innerHTML='<div class="state">조회 실패: '+e.message+
+      '<br><br>최초 실행 시 캘린더 권한 승인이 필요할 수 있어요.</div>';busy(false);
+  }).getHomeData(homeY,homeM);
+}
+function moveMonth(delta){
+  homeM+=delta;if(homeM<1){homeM=12;homeY--;}if(homeM>12){homeM=1;homeY++;}
+  loadHome();
+}
+function renderHome(d){
+  homeEvents={};
+  d.events.forEach(function(e){(homeEvents[e.date]=homeEvents[e.date]||[]).push(e);});
+  var right=
+    '<div class="rc"><h3>📅 다가오는 일정</h3>'+
+      '<div class="leg"><span><i class="lb"></i>반복</span><span><i class="lo"></i>일회성</span></div>'+
+      upcomingHtml(d.upcoming)+'</div>'+
+    '<div class="rc ddsec">'+ddSecInner(d.anniversaries)+'</div>'+
+    '<div class="rc memo"><h3>📝 공유 메모</h3>'+
+      '<textarea id="memoBox" placeholder="장보기·전달사항 등… 부부가 같이 씁니다">'+esc(d.memo.text)+'</textarea>'+
+      '<div class="memobar"><button onclick="saveMemoNow(this)">저장</button>'+
+      '<span class="mt" id="memoAt">'+(d.memo.at?'마지막 저장 '+d.memo.at:'')+'</span></div></div>';
+  document.getElementById("pane-home").innerHTML=
+    '<div class="homegrid"><div class="homeleft">'+calHtml(d.today)+
+    '<div id="daypanel" class="daypanel"></div></div>'+
+    '<div class="homeright">'+right+'</div></div>';
+  showDay(pendingSel||d.today);pendingSel=null;
+}
+function calHtml(today){
+  var html='<div class="cal"><div class="calhd">'+
+    '<button onclick="moveMonth(-1)">◀</button><span>'+homeY+'년 '+homeM+'월</span>'+
+    '<button onclick="moveMonth(1)">▶</button></div><div class="calgrid">';
+  DOW.forEach(function(w,i){html+='<div class="calw'+(i===0?' sun':'')+'">'+w+'</div>';});
+  var startDow=new Date(homeY,homeM-1,1).getDay();
+  var days=new Date(homeY,homeM,0).getDate();
+  for(var i=0;i<startDow;i++) html+='<div class="calc empty"></div>';
+  for(var n=1;n<=days;n++){
+    var ds=homeY+'-'+p2(homeM)+'-'+p2(n);
+    var dow=(startDow+n-1)%7;
+    var evs=homeEvents[ds]||[];
+    var dots=evs.length?'<div class="caldots">'+evs.slice(0,3).map(function(){return '<span class="dot"></span>';}).join('')+'</div>':'';
+    html+='<div class="calc'+(ds===today?' today':'')+(dow===0?' sun':'')+'" data-d="'+ds+'" onclick="showDay(\''+ds+'\')">'+
+      '<span class="cn">'+n+'</span>'+dots+'</div>';
+  }
+  return html+'</div></div>';
+}
+function upcomingHtml(list){
+  if(!list.length) return '<div class="empty" style="padding:8px 0">2주간 일정 없음</div>';
+  return list.map(function(e){
+    var dt=new Date(e.date+"T00:00");
+    return '<div class="up"><span class="ud">'+e.date.slice(5)+'('+DOW[dt.getDay()]+')</span>'+
+      '<span class="ut">'+(e.allday?'종일':e.time)+'</span>'+
+      '<span class="un'+(e.recur?'':' once')+'">'+e.title+'</span></div>';
+  }).join("");
+}
+function showDay(ds){
+  selDate=ds;
+  var evs=homeEvents[ds]||[];
+  var dt=new Date(ds+"T00:00");
+  var body=evs.length?evs.map(function(e){
+    return '<div class="dpev"><span class="tm">'+(e.allday?'종일':e.time)+'</span>'+
+      '<span class="'+(e.recur?'':'once')+'">'+e.title+'</span></div>';
+  }).join(""):'<div class="empty">일정 없음</div>';
+  var add='<div class="dpadd"><input id="evTime" type="time">'+
+    '<input id="evTitle" type="text" placeholder="일정 추가" onkeydown="if(event.key===\'Enter\')addEv(this)">'+
+    '<button onclick="addEv(this)">+</button></div>';
+  var p=document.getElementById("daypanel");
+  if(p) p.innerHTML='<h4>'+ds.slice(5)+' ('+DOW[dt.getDay()]+') 일정</h4>'+body+add;
+  document.querySelectorAll('.calc').forEach(function(c){c.classList.toggle('sel',c.dataset.d===ds);});
+}
+function addEv(el){
+  var time=document.getElementById("evTime").value;
+  var title=document.getElementById("evTitle").value.trim();
+  if(!title){alert("일정 제목을 입력하세요");return;}
+  var btn=el.tagName==="BUTTON"?el:el.parentNode.querySelector("button");
+  btn.disabled=true;btn.textContent="…";
+  google.script.run.withSuccessHandler(function(){
+    pendingSel=selDate;loadHome();
+  }).withFailureHandler(function(e){
+    btn.disabled=false;btn.textContent="+";alert("추가 실패: "+e.message);
+  }).addChildEvent(selDate,time,title);
+}
+function saveMemoNow(btn){
+  var t=document.getElementById("memoBox").value;
+  btn.disabled=true;btn.textContent="저장 중…";
+  google.script.run.withSuccessHandler(function(r){
+    btn.disabled=false;btn.textContent="저장";
+    document.getElementById("memoAt").textContent='마지막 저장 '+r.at;
+  }).withFailureHandler(function(e){
+    btn.disabled=false;btn.textContent="저장";alert("저장 실패: "+e.message);
+  }).saveMemo(t);
+}
+function ddSecInner(list){
+  var rows=list.length?list.map(ddHtml).join(""):'<div class="empty" style="padding:10px 0">등록된 기념일이 없어요.</div>';
+  return '<h3>🎉 기념일 · D-Day</h3>'+rows+
+    '<div class="ddadd"><input id="annName" type="text" placeholder="이름 (예: 결혼기념일)">'+
+    '<input id="annDate" type="date">'+
+    '<label><input id="annRep" type="checkbox" checked>매년</label>'+
+    '<button onclick="addAnn()">추가</button></div>';
+}
+function ddHtml(a){
+  var badge=a.dday===0?'D-DAY':(a.dday>0?'D-'+a.dday:'+'+(-a.dday));
+  var cls=a.dday===0?'dnow':(a.dday<=7?'dsoon':'');
+  var yr=(a.years&&a.years>0)?'<span class="yrs">'+a.years+'주년</span>':'';
+  return '<div class="ddrow"><span class="ddbadge '+cls+'">'+badge+'</span>'+
+    '<span class="ddname">'+a.name+yr+'</span><span class="dddate">'+a.next.slice(5)+'</span>'+
+    '<button class="ddx" onclick="delAnn(\''+a.id+'\')">×</button></div>';
+}
+function addAnn(){
+  var name=document.getElementById("annName").value.trim();
+  var date=document.getElementById("annDate").value;
+  var rep=document.getElementById("annRep").checked;
+  if(!name||!date){alert("이름과 날짜를 넣어주세요");return;}
+  google.script.run.withSuccessHandler(patchAnn).addAnniversary(name,date,rep);
+}
+function delAnn(id){ google.script.run.withSuccessHandler(patchAnn).deleteAnniversary(id); }
+function patchAnn(list){ var s=document.querySelector(".ddsec"); if(s) s.innerHTML=ddSecInner(list); }
+
+/* ── 🧸 키즈카페 ── */
+function slotHtml(s,url){
+  if(s.sn==="휴일") return '<span class="slot holi">휴일</span>';
+  var head='<b>'+s.sn+'</b><span class="t">'+s.time+'</span>';
+  var inner;
+  if(s.cap===0) inner=head+'<span class="prog">프로그램</span>';
+  else if(s.left>0){var low=s.left<=3?' low':'';inner=head+'<span class="left'+low+'">잔여'+s.left+'</span>';}
+  else inner=head+'<span class="full">마감</span>';
+  return '<a class="slot" href="'+url+'" target="_blank">'+inner+'</a>';
+}
+function kidsRow(d,url){
+  var dt=new Date(d.date+"T00:00");
+  var dow='<span class="dow">('+DOW[dt.getDay()]+')</span>';
+  return '<div class="row"><div class="date">'+d.date.slice(5)+dow+'</div>'+
+    '<div class="slots">'+d.slots.map(function(s){return slotHtml(s,url);}).join("")+'</div></div>';
+}
+function loadKids(){
+  busy(true);
+  document.getElementById("pane-kids").innerHTML='<div class="state">불러오는 중… (지점이 많아 20초쯤 걸려요)</div>';
+  google.script.run.withSuccessHandler(function(d){
+    document.getElementById("pane-kids").innerHTML=d.fcltys.map(function(f){
+      var body=f.dates.length? f.dates.map(function(dt){return kidsRow(dt,f.url);}).join("")
+        :'<div class="empty">현재 예약 가능한 날짜 없음 — 매월 1일·16일 오전 9시 순차 개시</div>';
+      return '<div class="fclty"><h2>'+f.name+'<a href="'+f.url+'" target="_blank">예약하기 ↗</a></h2>'+body+'</div>';
+    }).join("");
+    loaded.kids=true;busy(false);
+  }).withFailureHandler(function(e){
+    document.getElementById("pane-kids").innerHTML='<div class="state">조회 실패: '+e.message+'</div>';busy(false);
+  }).getData();
+}
+
+/* ── 📅 아이 ── */
+function loadChild(){
+  busy(true);
+  document.getElementById("pane-child").innerHTML='<div class="state">불러오는 중…</div>';
+  google.script.run.withSuccessHandler(function(d){
+    var today=new Date(d.today+"T00:00");
+    var thisEnd=new Date(today.getTime()+(7-today.getDay())*86400000);
+    var groups={this:[],next:[],later:[]};
+    d.events.forEach(function(e){
+      var dt=new Date(e.date+"T00:00");
+      if(dt<thisEnd) groups.this.push(e);
+      else if(dt<new Date(thisEnd.getTime()+7*86400000)) groups.next.push(e);
+      else groups.later.push(e);
+    });
+    var html='<div class="hint">📱 폰에서 <b>구글 캘린더 앱</b>에 <b>아이</b> 캘린더로 일정을 넣으면 여기·홈에 자동 표시돼요.<br>'+
+      '아내와 공유: 캘린더 웹 → 아이 캘린더 → 설정 → <b>특정 사용자와 공유</b> → 아내 이메일(변경 권한)</div>';
+    function section(t,arr){return arr.length?'<div class="wk"><h3>'+t+'</h3>'+arr.map(evHtml).join("")+'</div>':'';}
+    html+=section("이번 주",groups.this)+section("다음 주",groups.next)+section("그 이후",groups.later);
+    if(!d.events.length) html+='<div class="empty" style="padding:20px">앞으로 2주간 등록된 일정이 없어요.</div>';
+    document.getElementById("pane-child").innerHTML=html;loaded.child=true;busy(false);
+  }).withFailureHandler(function(e){
+    document.getElementById("pane-child").innerHTML='<div class="state">조회 실패: '+e.message+
+      '<br><br>최초 실행 시 캘린더 권한 승인이 필요할 수 있어요.</div>';busy(false);
+  }).getChildSchedule();
+}
+function evHtml(e){
+  var dt=new Date(e.date+"T00:00");
+  return '<div class="ev"><div class="d">'+e.date.slice(5)+' ('+DOW[dt.getDay()]+')</div>'+
+    '<div class="tm">'+(e.allday?'종일':e.time)+'</div><div class="ttl">'+e.title+'</div></div>';
+}
+
+/* ── 🏢 부동산 ── */
+function loadEstate(){
+  busy(true);
+  document.getElementById("pane-estate").innerHTML='<div class="state">불러오는 중…</div>';
+  google.script.run.withSuccessHandler(function(d){
+    if(d.needSetup){
+      document.getElementById("pane-estate").innerHTML=
+       '<div class="setup"><h3>🔧 실거래가 조회 설정이 필요해요</h3><ol>'+
+       '<li><a href="https://www.data.go.kr" target="_blank">data.go.kr</a> 가입 (무료, 2분)</li>'+
+       '<li>"아파트 매매 실거래가 상세 자료" 검색 → <b>활용신청</b> (즉시 승인)</li>'+
+       '<li>마이페이지에서 <b>일반 인증키(Decoding)</b> 복사</li>'+
+       '<li>키와 관심 단지(단지명·구)를 알려주시면 코드에 넣고 켜드려요</li></ol></div>';
+    } else {
+      document.getElementById("pane-estate").innerHTML=d.apts.map(function(a){
+        var body=a.deals.length? a.deals.slice(0,15).map(function(x){
+          return '<div class="deal"><div class="dd">'+x.date+'</div>'+
+            '<div class="amt">'+(x.amount/10000).toFixed(2)+'억</div>'+
+            '<div class="meta">'+x.area+'㎡ · '+x.floor+'층</div></div>';
+        }).join("") : '<div class="empty">최근 6개월 실거래 없음</div>';
+        return '<div class="aptcard"><h2>'+a.name+'</h2>'+body+'</div>';
+      }).join("");
+    }
+    loaded.estate=true;busy(false);
+  }).withFailureHandler(function(e){
+    document.getElementById("pane-estate").innerHTML='<div class="state">조회 실패: '+e.message+'</div>';busy(false);
+  }).getRealEstate();
+}
+
+/* ── 📈 포트폴리오 ── */
+var pfEditing=false;
+function won(n){ n=Math.round(n||0); return '₩'+n.toLocaleString('ko-KR'); }
+function pct(n){ return (n>=0?'+':'')+(n||0).toFixed(2)+'%'; }
+function plCls(n){ return n>0?'pos':(n<0?'neg':''); }
+var PF_COLORS=['#0f9d58','#34a853','#7cb342','#c0ca33','#fbbc04','#f4b400','#e88f2a','#e5484d','#9aa3b2','#8a93a3','#5b9bd5','#7c3aed'];
+
+function loadPf(){
+  busy(true);
+  if(!pfEditing) document.getElementById("pane-pf").innerHTML='<div class="state">시세 불러오는 중… (몇 초 걸려요)</div>';
+  google.script.run.withSuccessHandler(function(d){
+    document.getElementById("today").textContent=d.asOf+" 기준";
+    renderPf(d); loaded.pf=true; busy(false);
+  }).withFailureHandler(function(e){
+    document.getElementById("pane-pf").innerHTML='<div class="state">조회 실패: '+esc(e.message)+'</div>';busy(false);
+  }).pf_data();
+}
+
+function renderPf(d){
+  pfEditing=false;
+  var t=d.tiles;
+  var html='';
+  html+='<div class="pf-top"><h3 style="margin:0">📈 와이프 증권 포트폴리오</h3>'
+      +'<div class="net">순자산 총액<b>'+won(t.netAsset)+'</b></div></div>';
+
+  // 요약 타일 — 늘어나는 것(이번 달 수익·예수금·RP)을 앞에, 평가손익은 뒤로.
+  // 손익률은 따로 칸을 안 주고 평가손익 타일 밑줄로 내린다.
+  var mtdSub=(t.mtdYm?Number(t.mtdYm.slice(5)):new Date().getMonth()+1)+'월 매도 '+(t.mtdN||0)+'건';
+  var tl=[];
+  tl.push(tile('이번 달 매도수익', (t.mtdN?((t.mtdPl>=0?'+':'−')+won(Math.abs(t.mtdPl))):'—'),
+          t.mtdN?plCls(t.mtdPl):'', false, mtdSub));
+  tl.push(tile('예수금(원화)', won(d.cash), '', false, ''));
+  if(d.cashUsd>0){
+    var usdSub='₩'+Math.round(d.cashUsdKrw).toLocaleString();
+    if(d.cashUsdFx>0) usdSub+=' @'+Math.round(d.cashUsdFx).toLocaleString()
+      +' · 환차 <span class="'+plCls(d.cashFxPl)+'">'+(d.cashFxPl>=0?'+':'−')+'₩'+Math.abs(Math.round(d.cashFxPl)).toLocaleString()+'</span>';
+    tl.push(tile('예수금(달러)', '$'+d.cashUsd.toLocaleString(), '', false, usdSub));
+  }
+  if(t.rp>0){
+    var near=(d.rp||[])[0]||{};              // 만기 임박순 정렬돼 있다
+    var rpSub='';
+    if(near.due){
+      rpSub=near.due.slice(5).replace('-','/')+' 만기';
+      if(near.dday!=null) rpSub+=' · '+(near.dday>0?'D-'+near.dday:(near.dday===0?'D-DAY':'만기 경과'));
+    }
+    if(near.matureAmount) rpSub+=(rpSub?'<br>':'')+'만기 '+won(near.matureAmount)+' (세후 +'+won(near.net)+')';
+    tl.push(tile('RP(예치)', won(t.rp), '', false, rpSub));
+  }
+  tl.push(tile('전체 평가손익', (t.totalPL>=0?'+':'')+won(t.totalPL), plCls(t.totalPL),
+          false, '손익률 <span class="'+plCls(t.plRate)+'">'+pct(t.plRate)+'</span>'));
+  tl.push(tile('순자산 총액', won(t.netAsset), '', true));
+  html+='<div class="pf-tiles t'+tl.length+'">'+tl.join('')+'</div>';
+  if(d.rpCashWarn) html+='<div class="pf-note" style="margin:-10px 0 14px;color:#b45309">'
+    +'⚠️ RP 원금을 예수금에서 빼지 못했습니다(예수금 기록이 모자람). 편집에서 예수금을 실제 값으로 맞춰주세요.</div>';
+
+  // 성과 추이 (내 계좌 vs 시장)
+  html+='<div id="histWrap"></div>';
+
+  // 분석: 도넛 + 막대
+  html+='<div class="pf-analysis">';
+  html+='<div class="pf-card"><h3>종목 비중 (현금 포함)</h3>'+donutHtml(d.alloc)+'</div>';
+  html+='<div class="pf-card"><h3>종목별 수익률</h3>'+barsHtml(d.bars)+'</div>';
+  html+='</div>';
+
+  // 국내
+  html+='<div class="pf-sech">🇰🇷 국내 주식</div>';
+  html+='<div class="pf-sum">'
+     +sumBox('국내 총 평가손익',(d.krSummary.pl>=0?'+':'')+won(d.krSummary.pl),plCls(d.krSummary.pl))
+     +sumBox('국내 총 평가금액',won(d.krSummary.eval),'')+'</div>';
+  html+=holdTable(d.kr,false);
+
+  // 해외
+  html+='<div class="pf-sech">🇺🇸 해외 주식 (원화환산)</div>';
+  html+='<div class="pf-sum pf-sum3">'
+     +sumBox('해외 총 평가손익',(d.usSummary.pl>=0?'+':'')+won(d.usSummary.pl),plCls(d.usSummary.pl))
+     +sumBox('환차손익',(d.usSummary.fxPl>=0?'+':'')+won(d.usSummary.fxPl),plCls(d.usSummary.fxPl))
+     +sumBox('해외 총 평가금액',won(d.usSummary.eval),'')+'</div>';
+  html+= d.us.length? holdTable(d.us,true) : '<div class="empty" style="margin-bottom:18px">해외 보유 종목 없음</div>';
+
+  // 매도 성과 (실현손익)
+  html+='<div id="sellWrap"></div>';
+
+  // 배당·이자 수익
+  html+='<div id="divWrap"></div>';
+
+  // 편집 버튼
+  html+='<button class="pf-editbtn" onclick="openPfEdit()">✏️ 보유종목·현금 편집</button>';
+  html+='<div class="pf-note">환율 USD/KRW '+(d.fx?d.fx.toLocaleString():'—')+' · 시세는 네이버 금융 실시간(약 15분 지연 가능). '
+      +'\'—\'나 회색 종목은 코드/심볼을 확인하세요.</div>';
+
+  document.getElementById("pane-pf").innerHTML=html;
+  window._pfHoldings=d.holdings; window._pfCash=d.cash; window._pfCashUsd=d.cashUsd;
+  window._pfRp=d.rp||[]; window._pfFx=d.fx||0;
+  loadHist(); loadSells(); loadDivs();
+}
+
+/* ── 📈 성과 추이 (내 계좌 vs 시장) ── */
+var HS={W:820,H:300,pl:52,pr:106,pt:16,pb:30,bh:110};
+var HS_BAR=[
+  {k:'gain', nm:'익절', col:'#e5484d'},
+  {k:'div',  nm:'배당', col:'#0f9d58'},
+  {k:'loss', nm:'손절', col:'#2563eb'}
+];
+function man(v){ var a=Math.abs(v); return (v<0?'−':'+')+(a>=1e4?Math.round(a/1e4).toLocaleString()+'만':a.toLocaleString()); }
+var HS_SER=[
+  {k:'mine', nm:'내 계좌', sh:'내 계좌', col:'#6d28d9', w:2.6},
+  {k:'kospi',nm:'코스피',  sh:'코스피',  col:'#d97706', w:2},
+  {k:'snp',  nm:'S&P 500', sh:'S&P500', col:'#0891b2', w:2}
+];
+var histData=null, histTable=false, histRange='all';
+
+// 보이는 구간의 첫 달을 0%로 다시 잡는다.
+// 계좌는 연결수익률이라 (1+누적i)/(1+누적기준)−1 로 정확히 리베이스된다.
+function histSlice(){
+  var all=histData.points||[], p=all;
+  if(histRange==='ytd'){
+    var y=String(new Date().getFullYear());
+    var f=all.filter(function(x){ return x.m.slice(0,4)===y; });
+    if(f.length) p=f;
+  }
+  var bi=-1;
+  for(var i=0;i<p.length;i++){ if(p[i].mine!=null){ bi=i; break; } }
+  if(bi<0) bi=0;
+  var bm=p.length?p[bi].mine:null, bk=p.length?p[bi].kospiRaw:null, bs=p.length?p[bi].snpRaw:null;
+  return { base:p.length?p[bi].m:null, pts:p.map(function(x){
+    return { m:x.m, net:x.net, flow:x.flow, at:x.at, gain:x.gain||0, loss:x.loss||0, div:x.div||0,
+      mine: (x.mine==null||bm==null)?null:((1+x.mine/100)/(1+bm/100)-1)*100,
+      kospi:(x.kospiRaw&&bk)?(x.kospiRaw/bk-1)*100:null,
+      snp:  (x.snpRaw&&bs)  ?(x.snpRaw/bs-1)*100  :null };
+  })};
+}
+function histSetRange(r){ histRange=r; renderHist(); }
+
+function loadHist(){
+  google.script.run.withSuccessHandler(function(d){
+    histData=d; renderHist();
+  }).withFailureHandler(function(e){
+    var w=document.getElementById('histWrap');
+    if(w) w.innerHTML='<div class="hs-card">성과 추이 조회 실패: '+esc(e.message)+'</div>';
+  }).hist_data();
+}
+
+function histRefresh(btn){
+  if(btn){ btn.disabled=true; btn.textContent='갱신 중…'; }
+  google.script.run.withSuccessHandler(function(d){
+    histData=d; renderHist();
+  }).withFailureHandler(function(e){
+    alert('지수 갱신 실패: '+e.message); renderHist();
+  }).hist_refreshIdx();
+}
+function histToggleTable(){ histTable=!histTable; renderHist(); }
+
+function renderHist(){
+  var w=document.getElementById('histWrap'); if(!w||!histData) return;
+  var sl=histSlice(), p=sl.pts;
+
+  // 범례에 쓸 현재값은 보이는 구간의 마지막 점
+  var nw={};
+  HS_SER.forEach(function(s){
+    nw[s.k]=null;
+    for(var i=p.length-1;i>=0;i--){ if(p[i][s.k]!=null){ nw[s.k]=p[i][s.k]; break; } }
+  });
+
+  var years={}; (histData.points||[]).forEach(function(x){ years[x.m.slice(0,4)]=1; });
+  var multi=Object.keys(years).length>1;
+
+  var sub = sl.base
+    ? sl.base.slice(0,4)+'년 '+Number(sl.base.slice(5))+'월 = 0% 기준'
+    : '기록 준비 중';
+  var h='<div class="hs-card"><div class="hs-hd">'
+    +'<h3>📈 수익률 추이 — 내 계좌 vs 시장</h3><span class="sub">'+sub+'</span>'
+    +'<span class="acts">'
+    +(multi?'<button class="'+(histRange==='ytd'?'on':'')+'" onclick="histSetRange(\'ytd\')">올해</button>'
+           +'<button class="'+(histRange==='all'?'on':'')+'" onclick="histSetRange(\'all\')">전체</button>':'')
+    +'<button onclick="histToggleTable()">'+(histTable?'▾ 표 닫기':'▸ 표·직접입력')+'</button>'
+    +'<button onclick="histRefresh(this)">↻ 지수 갱신</button></span></div>';
+
+  // 범례 — 3계열이라 항상 표시(색만으로 구분하지 않는다)
+  h+='<div class="hs-leg">';
+  HS_SER.forEach(function(s){
+    var v=nw[s.k];
+    h+='<span class="it"><span class="sw" style="background:'+s.col+'"></span>'
+      +'<span class="nm">'+esc(s.nm)+'</span>'
+      +'<span class="vl" style="color:'+(v==null?'#8a93a3':s.col)+'">'
+      +(v==null?'—':pct(v))+'</span></span>';
+  });
+  h+='</div>';
+
+  h+=histChart(p);
+
+  var only1=p.filter(function(x){return x.mine!=null;}).length<2;
+  if(only1){
+    h+='<div class="hs-warn">계좌 기록이 아직 한 달치뿐이라 선이 그려지지 않습니다. '
+      +'다음 달 1일에 점이 하나 더 찍히면 이어집니다. '
+      +'증권사 앱에서 지난 달 잔고를 안다면 아래 <b>표·직접입력</b>에서 채워 넣으세요.</div>';
+  }
+  var src=histData.src||{};
+  if(src.kospi==='fail'||src.snp==='fail'){
+    h+='<div class="hs-warn">지수를 못 받아왔습니다 ('
+      +(src.kospi==='fail'?'코스피 ':'')+(src.snp==='fail'?'S&P500':'')
+      +'). ↻ 지수 갱신을 눌러보세요.</div>';
+  }
+
+  if(histTable) h+=histTableHtml(sl);
+
+  h+='<div class="hs-note">매달 처음 이 화면을 열 때 그 달 점이 자동으로 찍힙니다. '
+    +'계좌 수익률은 <b>입출금을 걷어낸 시간가중 방식</b>이라 돈을 더 넣어도 수익률이 부풀지 않습니다 '
+    +'— 입금·출금한 달은 표에서 <b>순입금</b>만 적어주세요.</div>';
+  h+='</div>';
+  w.innerHTML=h;
+}
+
+function histChart(p){
+  var n=p.length;
+  if(!n) return '<div class="empty">기록이 없습니다.</div>';
+
+  // Y 범위 — 0%를 항상 포함하고 보기 좋은 눈금으로 맞춘다
+  var lo=0, hi=0;
+  p.forEach(function(x){ HS_SER.forEach(function(s){
+    var v=x[s.k]; if(v==null) return;
+    if(v<lo) lo=v; if(v>hi) hi=v;
+  }); });
+  if(hi-lo<2) hi=lo+2;
+  var raw=(hi-lo)/5, mag=Math.pow(10,Math.floor(Math.log(raw)/Math.LN10));
+  var step=10*mag;
+  [1,2,2.5,5,10].forEach(function(m){ if(m*mag>=raw && m*mag<step) step=m*mag; });
+  // 눈금에 맞춰 넓히되 데이터 없는 쪽으로는 벌리지 않는다(아래가 텅 비는 것 방지)
+  var dlo=lo, dhi=hi;
+  lo=Math.floor(dlo/step)*step; hi=Math.ceil(dhi/step)*step;
+  if(hi-dhi<step*0.25) hi+=step;   // 최고점이 축선에 딱 붙으면 한 칸 띄운다
+
+  var iw=HS.W-HS.pl-HS.pr, ih=HS.H-HS.pt-HS.pb;
+  var X=function(i){ return n===1 ? HS.pl+iw/2 : HS.pl+i*iw/(n-1); };
+  var Y=function(v){ return HS.pt+(hi-v)/(hi-lo)*ih; };
+
+  var g='', xs=[], ptY=[];
+  for(var i=0;i<n;i++) xs.push(X(i));
+
+  // 가로 눈금 (뒤로 물러나게)
+  for(var t=lo;t<=hi+1e-9;t+=step){
+    var zero=Math.abs(t)<1e-9, y=Y(t);
+    g+='<line x1="'+HS.pl+'" y1="'+y.toFixed(1)+'" x2="'+(HS.W-HS.pr)+'" y2="'+y.toFixed(1)+'" '
+      +'stroke="'+(zero?'#b9c0cc':'#eef1f5')+'" stroke-width="'+(zero?1.5:1)+'"'
+      +(zero?' stroke-dasharray="5 4"':'')+'/>';
+    g+='<text x="'+(HS.pl-9)+'" y="'+(y+4).toFixed(1)+'" text-anchor="end" font-size="11" '
+      +'fill="'+(zero?'#6b7484':'#a6adba')+'">'+(t>0?'+':'')+(Math.round(t*10)/10)+'%</text>';
+  }
+
+  // X 라벨 — 해가 바뀌는 지점에만 연도를 붙인다
+  var everyN = n>14?2:1;
+  p.forEach(function(x,i){
+    if(i%everyN!==0 && i!==n-1) return;
+    var mm=Number(x.m.slice(5));
+    var newYear = i>0 && x.m.slice(0,4)!==p[i-1].m.slice(0,4);
+    g+='<text x="'+X(i).toFixed(1)+'" y="'+(HS.H-8)+'" text-anchor="middle" font-size="11" '
+      +'fill="#a6adba">'+(newYear?x.m.slice(2,4)+'년 '+mm+'월':mm+'월')+'</text>';
+  });
+
+  // 내 계좌 영역 (0% 기준 위/아래) — 주인공 계열만
+  var seg=[], area='';
+  var flush=function(){
+    if(seg.length>1){
+      var d='M'+X(seg[0].i).toFixed(1)+' '+Y(0).toFixed(1)+' ';
+      seg.forEach(function(q){ d+='L'+X(q.i).toFixed(1)+' '+Y(q.v).toFixed(1)+' '; });
+      d+='L'+X(seg[seg.length-1].i).toFixed(1)+' '+Y(0).toFixed(1)+' Z';
+      area+='<path d="'+d+'" fill="#6d28d9" opacity="0.09"/>';
+    }
+    seg=[];
+  };
+  p.forEach(function(x,i){ if(x.mine==null) flush(); else seg.push({i:i,v:x.mine}); });
+  flush();
+  g+=area;
+
+  // 선 + 점
+  var dots='';
+  HS_SER.forEach(function(s){
+    var d='', pen=false;
+    p.forEach(function(x,i){
+      var v=x[s.k];
+      if(v==null){ pen=false; return; }
+      d+=(pen?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)+' ';
+      pen=true;
+      dots+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(v).toFixed(1)+'" r="4" fill="'+s.col
+         +'" stroke="#fff" stroke-width="2"/>';
+    });
+    if(d) g+='<path d="'+d+'" fill="none" stroke="'+s.col+'" stroke-width="'+s.w
+          +'" stroke-linecap="round" stroke-linejoin="round"/>';
+  });
+  g+=dots;
+
+  for(var i2=0;i2<n;i2++){
+    ptY.push(HS_SER.map(function(s){ return p[i2][s.k]==null?null:Y(p[i2][s.k]); }));
+  }
+
+  // 선 끝 직접 라벨 (겹치면 밀어냄)
+  var labs=[];
+  HS_SER.forEach(function(s,si){
+    var li=-1;
+    for(var i3=n-1;i3>=0;i3--){ if(p[i3][s.k]!=null){ li=i3; break; } }
+    if(li<0) return;
+    labs.push({s:s, x:X(li), y:Y(p[li][s.k]), v:p[li][s.k]});
+  });
+  labs.sort(function(a,b){ return a.y-b.y; });
+  for(var i4=1;i4<labs.length;i4++){
+    if(labs[i4].y-labs[i4-1].y<15) labs[i4].y=labs[i4-1].y+15;
+  }
+  labs.forEach(function(L){
+    g+='<text x="'+(L.x+9).toFixed(1)+'" y="'+(L.y+4).toFixed(1)+'" font-size="11" '
+      +'font-weight="700" fill="'+L.s.col+'">'+esc(L.s.sh)+' '+pct(L.v)+'</text>';
+  });
+
+  // 호버 레이어
+  g+='<line id="hsCross" x1="0" y1="'+HS.pt+'" x2="0" y2="'+(HS.pt+ih)+'" stroke="#8a93a3" '
+    +'stroke-width="1" stroke-dasharray="3 3" opacity="0"/>';
+  HS_SER.forEach(function(s,si){
+    g+='<circle id="hsH'+si+'" cx="0" cy="0" r="6.5" fill="'+s.col
+      +'" stroke="#fff" stroke-width="2.5" opacity="0"/>';
+  });
+
+  window._hsGeo={xs:xs, ptY:ptY, W:HS.W}; window._hsPts=p;
+
+  // 아래 막대판 — 월별 익절(위)·배당(위)·손절(아래), 원화. 선과 같은 X 에 맞춘다
+  var up=0, dn=0;
+  p.forEach(function(x){ up=Math.max(up,x.gain,x.div); dn=Math.max(dn,-x.loss); });
+  var H=HS.H;
+  if(up>0||dn>0){
+    var top=HS.H+18, ph=HS.bh-34, z=top+ph*up/(up+dn), sc=ph/(up+dn);
+    var bw=Math.max(6,Math.min(16,iw/Math.max(n,1)/5));
+    g+='<text x="'+HS.pl+'" y="'+(top-6)+'" font-size="11" font-weight="700" fill="#6b7484">월별 익절·배당·손절 (원)</text>';
+    g+='<line x1="'+HS.pl+'" y1="'+z.toFixed(1)+'" x2="'+(HS.W-HS.pr)+'" y2="'+z.toFixed(1)+'" stroke="#b9c0cc" stroke-width="1"/>';
+    p.forEach(function(x,i){
+      var cx=X(i);
+      [['gain',cx-bw-1],['div',cx+1],['loss',cx-bw/2]].forEach(function(b){
+        var v=x[b[0]]; if(!v) return;
+        var col=HS_BAR.filter(function(s){ return s.k===b[0]; })[0].col;
+        var hgt=Math.max(1.5,Math.abs(v)*sc), y=v>0?z-hgt:z;
+        g+='<rect x="'+b[1].toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hgt.toFixed(1)+'" rx="2" fill="'+col+'"/>';
+        g+='<text x="'+(b[1]+bw/2).toFixed(1)+'" y="'+(v>0?y-3:y+hgt+10).toFixed(1)+'" text-anchor="middle" font-size="10" fill="'+col+'">'+man(v)+'</text>';
+      });
+    });
+    H=HS.H+HS.bh;
+  }
+
+  return '<div class="hs-plot" id="hsPlot" onmousemove="histMove(event)" '
+    +'onmouseleave="histLeave()" ontouchmove="histTouch(event)" ontouchend="histLeave()">'
+    +'<svg viewBox="0 0 '+HS.W+' '+H+'" preserveAspectRatio="xMidYMid meet" '
+    +'role="img" aria-label="내 계좌와 코스피·S&amp;P500 월별 누적 수익률 비교">'+g+'</svg>'
+    +'<div class="hs-tip" id="hsTip"></div></div>';
+}
+
+function histAt(clientX){
+  var g=window._hsGeo, wrap=document.getElementById('hsPlot');
+  if(!g||!wrap||!histData) return;
+  var svg=wrap.querySelector('svg'); if(!svg) return;
+  // 좁은 화면에선 svg 가 wrap 보다 넓고 가로 스크롤된다 — svg 기준으로 재야 맞다
+  var r=svg.getBoundingClientRect(), wr=wrap.getBoundingClientRect();
+  var sc=r.width/g.W, dx=r.left-wr.left;
+  var mx=(clientX-r.left)/sc, bi=0, bd=1e9;
+  g.xs.forEach(function(x,i){ var dd=Math.abs(x-mx); if(dd<bd){ bd=dd; bi=i; } });
+
+  var cross=document.getElementById('hsCross');
+  if(cross){ cross.setAttribute('x1',g.xs[bi]); cross.setAttribute('x2',g.xs[bi]); cross.setAttribute('opacity','1'); }
+  HS_SER.forEach(function(s,si){
+    var c=document.getElementById('hsH'+si); if(!c) return;
+    var y=g.ptY[bi][si];
+    if(y==null){ c.setAttribute('opacity','0'); return; }
+    c.setAttribute('cx',g.xs[bi]); c.setAttribute('cy',y); c.setAttribute('opacity','1');
+  });
+
+  var d=(window._hsPts||[])[bi], tip=document.getElementById('hsTip');
+  if(!d) return;
+  if(!tip) return;
+  var t='<b>'+d.m.slice(0,4)+'년 '+Number(d.m.slice(5))+'월</b>';
+  HS_SER.forEach(function(s){
+    t+='<div class="tl"><span class="d" style="background:'+s.col+'"></span>'
+      +'<span class="k">'+esc(s.nm)+'</span><span class="v">'
+      +(d[s.k]==null?'—':pct(d[s.k]))+'</span></div>';
+  });
+  var ex=[];
+  if(d.net!=null) ex.push('순자산 '+won(d.net));
+  if(d.flow) ex.push('순입금 '+(d.flow>0?'+':'−')+won(Math.abs(d.flow)));
+  if(d.at) ex.push(d.at+' 기록');
+  if(ex.length) t+='<div class="ex">'+esc(ex.join(' · '))+'</div>';
+  var bx=[];
+  HS_BAR.forEach(function(s){ if(d[s.k]) bx.push(s.nm+' '+sellSign(d[s.k])); });
+  if(bx.length) t+='<div class="ex">'+esc(bx.join(' · '))+'</div>';
+  tip.innerHTML=t; tip.className='hs-tip on';
+  var px=dx+g.xs[bi]*sc, lx=px+14;
+  if(lx+tip.offsetWidth>wr.width) lx=px-tip.offsetWidth-14;
+  tip.style.left=Math.max(0,Math.min(lx, wr.width-tip.offsetWidth))+'px';
+  tip.style.top='6px';
+}
+function histMove(ev){ histAt(ev.clientX); }
+function histTouch(ev){ if(ev.touches&&ev.touches[0]) histAt(ev.touches[0].clientX); }
+function histLeave(){
+  var c=document.getElementById('hsCross'); if(c) c.setAttribute('opacity','0');
+  HS_SER.forEach(function(s,si){
+    var e=document.getElementById('hsH'+si); if(e) e.setAttribute('opacity','0');
+  });
+  var t=document.getElementById('hsTip'); if(t) t.className='hs-tip';
+}
+
+/* 표 = 접근성용 대체 뷰 + 과거 잔고 직접 입력 */
+function histTableHtml(sl){
+  var byM={}; sl.pts.forEach(function(x){ byM[x.m]=x; });
+  var only=(histRange==='ytd')?String(new Date().getFullYear()):null;
+  var cur=(new Date()).getFullYear()+'-'+('0'+((new Date()).getMonth()+1)).slice(-2);
+  var h='<table class="hs-tb"><thead><tr><th class="m">월</th><th>순자산(원)</th>'
+    +'<th>순입금(원)</th><th>내 계좌</th><th>코스피</th><th>S&P 500</th><th></th></tr></thead><tbody>';
+  (histData.rows||[]).forEach(function(r){
+    if(only && r.m.slice(0,4)!==only) return;
+    var p=byM[r.m]||{};
+    h+='<tr'+(r.m===cur?' class="cur"':'')+'><td class="m">'+r.m+(r.m===cur?' <span style="color:#7c3aed">이번달</span>':'')+'</td>'
+      +'<td><input id="hn_'+r.m+'" value="'+(r.net!=null?Number(r.net).toLocaleString():'')+'" placeholder="—"></td>'
+      +'<td><input class="fl" id="hf_'+r.m+'" value="'+(r.flow?Number(r.flow).toLocaleString():'')+'" placeholder="0"></td>'
+      +'<td class="'+plCls(p.mine||0)+'">'+(p.mine==null?'—':pct(p.mine))+'</td>'
+      +'<td class="'+plCls(p.kospi||0)+'">'+(p.kospi==null?'—':pct(p.kospi))+'</td>'
+      +'<td class="'+plCls(p.snp||0)+'">'+(p.snp==null?'—':pct(p.snp))+'</td>'
+      +'<td><button class="sv" onclick="histSave(\''+r.m+'\')">저장</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  h+='<div class="hs-note">순자산 칸을 비우면 그 달은 계좌 라인에서 빠집니다. '
+    +'이번 달 값은 매번 자동으로 덮어쓰지만, 손으로 저장하면 그 값이 유지됩니다.</div>';
+  return h;
+}
+
+function histSave(m){
+  var n=document.getElementById('hn_'+m), f=document.getElementById('hf_'+m);
+  google.script.run.withSuccessHandler(function(d){
+    histData=d; renderHist();
+  }).withFailureHandler(function(e){ alert('저장 실패: '+e.message); })
+  .hist_setRow({ m:m, net:(n?n.value.trim():''), flow:(f?f.value.trim():'') });
+}
+
+/* ── 📉 매도 성과 (실현손익) ── */
+var sellOpen=false, sellData=null;
+
+function loadSells(){
+  google.script.run.withSuccessHandler(function(s){
+    sellData=s; renderSells();
+  }).withFailureHandler(function(e){
+    var w=document.getElementById("sellWrap");
+    if(w) w.innerHTML='<div class="pf-card">매도 기록 조회 실패: '+esc(e.message)+'</div>';
+  }).sell_data();
+}
+
+function sellSign(v){ return (v>=0?'+':'−')+'₩'+Math.abs(Math.round(v)).toLocaleString(); }
+
+function renderSells(){
+  var w=document.getElementById("sellWrap"); if(!w||!sellData) return;
+  var t=sellData.total, ms=sellData.months, rows=sellData.rows;
+
+  var h='<div class="pf-card sell-card"><h3>📉 매도 성과 (실현손익)'
+      +'<button class="sell-add" onclick="openSellForm()">＋ 매도 기록</button></h3>';
+
+  if(!rows.length){
+    h+='<div class="empty">아직 매도 기록이 없습니다. 팔았던 종목을 남겨두면 월별로 쌓입니다.</div></div>';
+    w.innerHTML=h; return;
+  }
+
+  h+='<div class="pf-tiles" style="margin-bottom:12px">'
+    +tile('누적 실현손익', sellSign(t.pl), plCls(t.pl), true)
+    +tile('실현 수익률', pct(t.rate), plCls(t.rate))
+    +tile('승패', t.win+'승 '+t.lose+'패', '', false, '전체 '+t.n+'건')
+    +tile('환차손익', sellSign(t.fxPl), plCls(t.fxPl), false, '해외 매도분')
+    +'</div>';
+
+  // 월별 누적
+  h+='<table class="sell-tb"><thead><tr><th>월</th><th>건수</th><th>승/패</th>'
+    +'<th class="r">실현손익</th><th class="r">수익률</th><th class="r">누적</th></tr></thead><tbody>';
+  ms.forEach(function(m){
+    h+='<tr><td><b>'+m.month+'</b></td><td>'+m.n+'</td>'
+      +'<td><span class="up">'+m.win+'</span>/<span class="dn">'+m.lose+'</span></td>'
+      +'<td class="r '+plCls(m.pl)+'">'+sellSign(m.pl)+'</td>'
+      +'<td class="r '+plCls(m.rate)+'">'+pct(m.rate)+'</td>'
+      +'<td class="r"><b>'+sellSign(m.cum)+'</b></td></tr>';
+  });
+  h+='</tbody></table>';
+
+  // 건별 (접기)
+  h+='<div class="sell-more" onclick="sellOpen=!sellOpen;renderSells()">'
+    +(sellOpen?'▾ 건별 내역 접기':'▸ 건별 내역 '+rows.length+'건 보기')+'</div>';
+  if(sellOpen){
+    h+='<table class="sell-tb"><thead><tr><th>날짜</th><th>종목</th><th class="r">수량</th>'
+      +'<th class="r">매수</th><th class="r">매도</th><th class="r">손익</th>'
+      +'<th class="r">수익률</th><th></th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      h+='<tr><td>'+r.date.slice(5)+'</td>'
+        +'<td>'+esc(r.name)+(r.market==='US'?' <span class="mk-us">US</span>':'')
+        +(r.memo?'<div class="sell-memo">'+esc(r.memo)+'</div>':'')+'</td>'
+        +'<td class="r">'+r.qty+'</td>'
+        +'<td class="r">'+(r.market==='US'?'$':'')+r.buy.toLocaleString()+'</td>'
+        +'<td class="r">'+(r.market==='US'?'$':'')+r.sell.toLocaleString()+'</td>'
+        +'<td class="r '+plCls(r.pl)+'">'+sellSign(r.pl)
+        +(r.fxPl?'<div class="sell-memo">ㄴ환차 '+sellSign(r.fxPl)+'</div>':'')+'</td>'
+        +'<td class="r '+plCls(r.rate)+'">'+pct(r.rate)+'</td>'
+        +'<td class="r"><button class="sell-del" onclick="delSell(\''+r.id+'\')">✕</button></td></tr>';
+    });
+    h+='</tbody></table>';
+  }
+  h+='</div>';
+  w.innerHTML=h;
+}
+
+function openSellForm(){
+  var hs=window._pfHoldings||[];
+  var opts='<option value="">— 직접 입력 —</option>'+hs.map(function(h,i){
+    return '<option value="'+i+'">'+esc(h.name||h.code)+' ('+h.qty+'주 · 평단 '
+      +(h.market==='US'?'$':'')+Number(h.avg).toLocaleString()+')</option>';
+  }).join('');
+  var box=document.createElement('div');
+  box.className='sell-modal'; box.id='sellModal';
+  box.innerHTML='<div class="sell-box"><h3>매도 기록</h3>'
+    +'<label>보유종목에서 <select id="sfPick" onchange="sellPick(this.value)">'+opts+'</select></label>'
+    +'<div class="sf-grid">'
+    +'<label>날짜<input id="sfDate" type="date" value="'+new Date().toISOString().slice(0,10)+'"></label>'
+    +'<label>시장<select id="sfMk"><option value="KR">국내</option><option value="US">해외</option></select></label>'
+    +'<label>종목코드<input id="sfCode" placeholder="005930 / AAPL"></label>'
+    +'<label>종목명<input id="sfName" placeholder="삼성전자"></label>'
+    +'<label>수량<input id="sfQty" type="number" step="any"></label>'
+    +'<label>매수 평단<input id="sfBuy" type="number" step="any"></label>'
+    +'<label>매도 단가<input id="sfSell" type="number" step="any"></label>'
+    +'<label>수수료·세금(원)<input id="sfFee" type="number" step="any" value="0"></label>'
+    +'<label>매입 환율<input id="sfBfx" type="number" step="any" placeholder="해외만"></label>'
+    +'<label>매도 환율<input id="sfSfx" type="number" step="any" placeholder="해외만"></label>'
+    +'</div>'
+    +'<label>메모<input id="sfMemo" placeholder="익절 이유·손절 기준 등"></label>'
+    +'<label class="sf-chk"><input type="checkbox" id="sfReduce" checked> 보유종목에서 이 수량만큼 차감</label>'
+    +'<label class="sf-chk"><input type="checkbox" id="sfCash" checked> 매도 대금을 예수금에 더하기 (수수료·세금 차감)</label>'
+    +'<div class="sf-btns"><button class="ok" onclick="saveSell()">저장</button>'
+    +'<button onclick="closeSellForm()">취소</button></div></div>';
+  document.body.appendChild(box);
+}
+
+function sellPick(i){
+  if(i==='') return;
+  var h=(window._pfHoldings||[])[Number(i)]; if(!h) return;
+  document.getElementById('sfMk').value=h.market;
+  document.getElementById('sfCode').value=h.code;
+  document.getElementById('sfName').value=h.name||h.code;
+  document.getElementById('sfQty').value=h.qty;
+  document.getElementById('sfBuy').value=h.avg;
+  if(h.market==='US'&&h.buyFx) document.getElementById('sfBfx').value=h.buyFx;
+}
+
+function closeSellForm(){
+  var m=document.getElementById('sellModal'); if(m) m.remove();
+}
+
+function saveSell(){
+  var g=function(id){ return document.getElementById(id).value; };
+  var p={ date:g('sfDate'), market:g('sfMk'), code:g('sfCode').trim(),
+          name:g('sfName').trim(), qty:g('sfQty'), buy:g('sfBuy'), sell:g('sfSell'),
+          fee:g('sfFee'), buyFx:g('sfBfx'), sellFx:g('sfSfx'), memo:g('sfMemo').trim(),
+          reduce:document.getElementById('sfReduce').checked,
+          addCash:document.getElementById('sfCash').checked };
+  if(!p.code){ alert('종목코드를 입력하세요'); return; }
+  if(!(Number(p.qty)>0)){ alert('수량을 입력하세요'); return; }
+  busy(true);
+  google.script.run.withSuccessHandler(function(s){
+    busy(false);
+    if(s&&s.error){ alert(s.error); return; }
+    closeSellForm(); sellData=s; renderSells();
+    if(p.reduce||p.addCash) loadPf();   // 보유 수량이 바뀌었으니 다시 조회
+  }).withFailureHandler(function(e){ busy(false); alert('저장 실패: '+e.message); })
+    .sell_fromHolding(p);
+}
+
+function delSell(id){
+  if(!confirm('이 매도 기록을 지울까요?\n보유종목 수량은 되돌아가지 않고, 더했던 예수금은 다시 빠집니다.')) return;
+  busy(true);
+  google.script.run.withSuccessHandler(function(s){
+    busy(false); sellData=s; renderSells(); loadPf();
+  }).withFailureHandler(function(e){ busy(false); alert(e.message); }).sell_del(id);
+}
+
+/* ── 💵 배당·이자 수익 ── */
+var divData=null, divOpen=false;
+
+function loadDivs(){
+  google.script.run.withSuccessHandler(function(s){
+    divData=s; renderDivs();
+  }).withFailureHandler(function(e){
+    var w=document.getElementById('divWrap');
+    if(w) w.innerHTML='<div class="pf-card">배당 기록 조회 실패: '+esc(e.message)+'</div>';
+  }).div_data();
+}
+
+function renderDivs(){
+  var w=document.getElementById('divWrap'); if(!w||!divData) return;
+  var d=divData, rows=d.rows;
+  var h='<div class="pf-card sell-card" style="margin-top:18px"><h3>💵 배당·이자 수익'
+    +'<button class="sell-add" onclick="openDivForm()">＋ 배당 기록</button></h3>';
+  h+='<div class="pf-tiles" style="margin-bottom:12px">'
+    +tile('올해 배당', won(d.year), d.year?'pos':'', false, new Date().getFullYear()+'년 세후')
+    +tile('누적 배당', won(d.total), d.total?'pos':'', false, '전체 '+rows.length+'건')
+    +tile('RP 이자', won(d.rpNet), d.rpNet?'pos':'', false, '만기 시 세후 예상')
+    +tile('배당+이자 합계', won(d.total+d.rpNet), 'pos', true)
+    +'</div>';
+  if(!rows.length){
+    h+='<div class="empty">배당이 들어오면 <b>＋ 배당 기록</b>으로 세후 입금액을 적어두세요. 월별로 쌓이고 수익률 차트 아래 초록 막대로도 보입니다.</div></div>';
+    w.innerHTML=h; return;
+  }
+  if(d.byCode.length>1){
+    h+='<div class="sell-memo" style="margin-bottom:8px">종목별 · '+d.byCode.map(function(c){
+      return esc(c.name)+' '+won(c.krw)+' ('+c.n+'회)'; }).join(' · ')+'</div>';
+  }
+  var shown=divOpen?rows:rows.slice(0,5);
+  h+='<table class="sell-tb"><thead><tr><th>날짜</th><th>종목</th><th class="r">세후 입금</th>'
+    +'<th class="r">원화</th><th></th></tr></thead><tbody>';
+  shown.forEach(function(r){
+    h+='<tr><td>'+r.date.slice(5)+'</td>'
+      +'<td>'+esc(r.name)+(r.market==='US'?' <span class="mk-us">US</span>':'')
+      +(r.memo?'<div class="sell-memo">'+esc(r.memo)+'</div>':'')+'</td>'
+      +'<td class="r">'+(r.market==='US'?'$'+Number(r.amt).toLocaleString()+'<div class="sell-memo">@'+Math.round(r.fx).toLocaleString()+'</div>':won(r.amt))+'</td>'
+      +'<td class="r pos">+'+won(r.krw)+'</td>'
+      +'<td class="r"><button class="sell-del" onclick="delDiv(\''+r.id+'\')">✕</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  if(rows.length>5) h+='<div class="sell-more" onclick="divOpen=!divOpen;renderDivs()">'
+    +(divOpen?'▾ 접기':'▸ 전체 '+rows.length+'건 보기')+'</div>';
+  h+='</div>';
+  w.innerHTML=h;
+}
+
+function openDivForm(){
+  var hs=window._pfHoldings||[];
+  var si=-1;
+  var opts=hs.map(function(h,i){
+    if(si<0&&h.code==='SCHD') si=i;
+    return '<option value="'+i+'">'+esc(h.name||h.code)+' ('+h.code+')</option>';
+  }).join('');
+  var box=document.createElement('div');
+  box.className='sell-modal'; box.id='divModal';
+  box.innerHTML='<div class="sell-box"><h3>배당 기록</h3>'
+    +'<label>종목<select id="dfPick" onchange="divPick()">'+opts+'</select></label>'
+    +'<div class="sf-grid">'
+    +'<label>입금일<input id="dfDate" type="date" value="'+new Date().toISOString().slice(0,10)+'"></label>'
+    +'<label id="dfAmtL">세후 입금액<input id="dfAmt" type="number" step="any"></label>'
+    +'<label id="dfFxL">환율(원/달러)<input id="dfFx" type="number" step="any" value="'+(window._pfFx?Math.round(window._pfFx*100)/100:'')+'"></label>'
+    +'</div>'
+    +'<label>메모<input id="dfMemo" placeholder="분기 배당 등"></label>'
+    +'<label class="sf-chk"><input type="checkbox" id="dfCash" checked> 예수금에 더하기 (해외는 달러 예수금)</label>'
+    +'<div class="sf-btns"><button class="ok" onclick="saveDiv()">저장</button>'
+    +'<button onclick="closeDivForm()">취소</button></div></div>';
+  document.body.appendChild(box);
+  if(si>=0) document.getElementById('dfPick').value=si;
+  divPick();
+}
+
+function divPick(){
+  var h=(window._pfHoldings||[])[Number(document.getElementById('dfPick').value)]||{};
+  var us=h.market==='US';
+  document.getElementById('dfAmtL').firstChild.nodeValue=us?'세후 입금액($)':'세후 입금액(원)';
+  document.getElementById('dfFxL').style.display=us?'':'none';
+}
+
+function closeDivForm(){ var m=document.getElementById('divModal'); if(m) m.remove(); }
+
+function saveDiv(){
+  var h=(window._pfHoldings||[])[Number(document.getElementById('dfPick').value)];
+  if(!h){ alert('종목을 고르세요'); return; }
+  var g=function(id){ return document.getElementById(id).value; };
+  var p={ date:g('dfDate'), market:h.market, code:h.code, name:h.name||h.code,
+          amt:g('dfAmt'), fx:g('dfFx'), memo:g('dfMemo').trim(),
+          addCash:document.getElementById('dfCash').checked };
+  if(!(Number(p.amt)>0)){ alert('배당금을 입력하세요'); return; }
+  busy(true);
+  google.script.run.withSuccessHandler(function(s){
+    busy(false);
+    if(s&&s.error){ alert(s.error); return; }
+    closeDivForm();
+    if(p.addCash) loadPf(); else { divData=s; renderDivs(); loadHist(); }
+  }).withFailureHandler(function(e){ busy(false); alert('저장 실패: '+e.message); }).div_add(p);
+}
+
+function delDiv(id){
+  if(!confirm('이 배당 기록을 지울까요?\n더했던 예수금은 다시 빠집니다.')) return;
+  busy(true);
+  google.script.run.withSuccessHandler(function(){ busy(false); loadPf(); })
+    .withFailureHandler(function(e){ busy(false); alert(e.message); }).div_del(id);
+}
+
+function tile(lab,val,cls,hl,sub){
+  return '<div class="pf-tile'+(hl?' hl':'')+'"><div class="lab">'+lab+'</div>'
+    +'<div class="val '+(cls||'')+'">'+val+'</div>'
+    +(sub?'<div class="tsub">'+sub+'</div>':'')+'</div>';
+}
+function sumBox(lab,val,cls){
+  return '<div class="b"><div class="lab">'+lab+'</div><div class="val '+(cls||'')+'">'+val+'</div></div>';
+}
+
+function holdTable(rows,us){
+  if(!rows.length) return '<div class="empty" style="margin-bottom:18px">보유 종목 없음</div>';
+  var cur=us?'$':'₩';
+  var h='<div class="pf-scroll"><table class="pf-tbl"><thead><tr>'
+    +'<th class="nm">종목</th><th>보유량</th><th>평단</th>'
+    +(us?'<th>매입환율</th>':'')+'<th>현재가</th>'
+    +'<th>매입금액</th><th>평가금액</th><th>평가손익</th>'
+    +(us?'<th>ㄴ환차손익</th>':'')+'<th>수익률</th></tr></thead><tbody>';
+  rows.forEach(function(x){
+    var r = x.costKrw>0 ? x.pl/x.costKrw*100 : 0;
+    var noqt = !x.ok;
+    h+='<tr>'
+      +'<td class="nm">'+esc(x.name)+(noqt?' <span class="noqt">(시세없음: '+esc(x.code)+')</span>':'')+'</td>'
+      +'<td>'+x.qty.toLocaleString()+'</td>'
+      +'<td>'+cur+fmtNum(x.avg,us)+'</td>'
+      +(us?'<td>'+(x.buyFx?'₩'+Math.round(x.buyFx).toLocaleString():'—')+'</td>':'')
+      +'<td>'+(x.ok?cur+fmtNum(x.price,us):'—')+'</td>'
+      +'<td>'+won(x.costKrw)+'</td>'
+      +'<td>'+won(x.evalKrw)+'</td>'
+      +'<td class="'+plCls(x.pl)+'">'+(x.pl>=0?'▲ ':'▼ ')+won(Math.abs(x.pl))+'</td>'
+      +(us?'<td class="'+plCls(x.fxPL)+'">'+(x.fxPL>=0?'+':'−')+won(Math.abs(x.fxPL))+'</td>':'')
+      +'<td class="'+plCls(r)+'">'+pct(r)+'</td></tr>';
+  });
+  return h+'</tbody></table></div>';
+}
+function fmtNum(n,us){ return us? (n||0).toLocaleString('en-US',{maximumFractionDigits:2}) : Math.round(n||0).toLocaleString(); }
+
+/* 도넛 (inline SVG) */
+function donutHtml(alloc){
+  var total=0; alloc.forEach(function(a){total+=a.value;});
+  if(total<=0) return '<div class="empty">데이터 없음</div>';
+  var cx=70,cy=70,r=54,sw=26, C=2*Math.PI*r, off=0;
+  var segs='';
+  alloc.forEach(function(a,i){
+    var frac=a.value/total, len=frac*C;
+    var col=a.cash?'#c7cdd6':PF_COLORS[i%PF_COLORS.length].replace(/\s/g,'');
+    segs+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+col+'" '
+       +'stroke-width="'+sw+'" stroke-dasharray="'+len+' '+(C-len)+'" '
+       +'stroke-dashoffset="'+(-off)+'" transform="rotate(-90 '+cx+' '+cy+')"></circle>';
+    off+=len;
+  });
+  var svg='<svg width="140" height="140" viewBox="0 0 140 140">'+segs
+     +'<text x="70" y="74" text-anchor="middle" font-size="12" fill="#8a93a3">총 '+ (Math.round(total)>=100000000?(total/1e8).toFixed(1)+'억':Math.round(total/1e4).toLocaleString()+'만') +'</text></svg>';
+  var leg='<div class="legend">';
+  alloc.forEach(function(a,i){
+    var col=a.cash?'#c7cdd6':PF_COLORS[i%PF_COLORS.length].replace(/\s/g,'');
+    var p=(a.value/total*100).toFixed(1);
+    leg+='<div class="lgr"><span class="sw" style="background:'+col+'"></span>'
+       +'<span class="lgn">'+esc(a.name)+'</span>'
+       +'<span class="lgp">'+p+'%</span><span class="lgv">'+won(a.value)+'</span></div>';
+  });
+  leg+='</div>';
+  return '<div class="donut-wrap">'+svg+leg+'</div>';
+}
+
+/* 종목별 수익률 가로 막대 */
+function barsHtml(bars){
+  if(!bars.length) return '<div class="empty">데이터 없음</div>';
+  var max=1; bars.forEach(function(b){ max=Math.max(max,Math.abs(b.rate)); });
+  var h='';
+  bars.forEach(function(b){
+    var w=Math.min(100,Math.abs(b.rate)/max*100);
+    var pos=b.rate>=0;
+    var col=pos?'var(--red)':'var(--blue)';
+    // 중앙 0 기준 좌우
+    h+='<div class="barrow"><span class="bn">'+esc(b.name)+'</span>'
+      +'<div class="bt"><div class="bf" style="'+(pos?'left:50%':'right:50%')+';width:'+(w/2)+'%;background:'+col+'"></div>'
+      +'<div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line)"></div></div>'
+      +'<span class="bv '+plCls(b.rate)+'">'+pct(b.rate)+'</span></div>';
+  });
+  return h;
+}
+
+/* 편집 UI */
+function openPfEdit(){
+  pfEditing=true;
+  var hs=window._pfHoldings||[];
+  var html='<div class="pf-edit"><h3>보유종목·현금 편집</h3>'
+    +'<div class="pf-scroll"><table id="pfEditTbl"><thead><tr>'
+    +'<th style="width:66px">시장</th><th style="width:100px">코드/심볼</th><th>종목명</th>'
+    +'<th style="width:80px">보유량</th><th style="width:100px">평단가</th>'
+    +'<th style="width:100px">매입환율<br><span style="font-weight:400">해외만</span></th><th style="width:78px"></th>'
+    +'</tr></thead><tbody id="pfEditBody"></tbody></table></div>'
+    +'<div class="pf-editbar">'
+    +'<button class="addr" onclick="addPfRow()">+ 종목 추가</button>'
+    +'<span class="cashin">현금(원) <input id="pfCash" type="number" value="'+(window._pfCash||0)+'"></span>'
+    +'<span class="cashin">현금($) <input id="pfCashUsd" type="number" value="'+(window._pfCashUsd||0)+'">'
+      +'<button class="buyb" onclick="pfFxBuy()">➕환전</button></span>'
+    +'<input type="hidden" id="pfCashUsdFx" value="'+(window._pfCashUsdFx||0)+'">'
+    +'<button class="save" onclick="savePf()">💾 저장하고 새로고침</button>'
+    +'</div>'
+    +'<div id="pfFxBox"></div>'
+    +'<div class="pf-sech" style="margin-top:14px">🏦 RP · 예치 상품</div>'
+    +'<div id="pfRpBody"></div>'
+    +'<button class="addr" onclick="addRpRow()">+ RP 추가</button>'
+    +'<div class="pf-note">· 국내: 6자리 종목코드(예 005930). · 해외: 티커(예 AAPL, TSLA) — 뒤 접미사는 자동으로 찾습니다.<br>'
+    +'· 평단가는 국내=원, 해외=달러 기준. · <b>해외 매입환율</b>(살 때 원/달러)을 넣으면 환차손익이 분리 계산됩니다(비우면 현재환율 적용=환차 0).<br>'
+    +'· <b>➕ 적립(추가매수)</b>: 종목의 ➕ 버튼에 이번 매수 수량·단가·환율을 넣으면 평단·매입환율이 자동으로 합쳐집니다(가중평균).<br>'
+    +'· <b>➕환전</b>: 원→달러 환전할 때마다 금액·환율을 넣으면 달러현금 평균환율이 갱신되고 현금 환차손익이 표시됩니다.</div>'
+    +'<button class="pf-editbtn" style="margin-top:10px" onclick="loadPf()">← 취소</button>'
+    +'</div>';
+  document.getElementById("pane-pf").innerHTML=html;
+  hs.forEach(function(h){ addPfRow(h); });
+  if(!hs.length) addPfRow();
+  (window._pfRp||[]).forEach(function(r){ addRpRow(r); });
+}
+function addRpRow(r){
+  r=(r&&r.amount!==undefined)?r:{name:'',amount:'',rate:'',start:'',days:''};
+  var box=document.getElementById("pfRpBody");
+  var div=document.createElement('div');
+  div.className='rp-row';
+  div.innerHTML=
+     '<input class="rp-nm" value="'+escAttr(r.name)+'" placeholder="원화 RP">'
+    +'<span class="rp-lb">원금</span><input class="rp-am" type="number" value="'+(r.amount||'')+'">'
+    +'<span class="rp-lb">연이율%</span><input class="rp-rt" type="number" step="0.01" value="'+(r.rate||'')+'">'
+    +'<span class="rp-lb">가입일</span><input class="rp-st" type="date" value="'+escAttr((r.start||'').slice(0,10))+'">'
+    +'<span class="rp-lb">일수</span><input class="rp-dy" type="number" value="'+(r.days||'')+'">'
+    +'<button class="delx" onclick="this.closest(\'.rp-row\').remove()">×</button>';
+  box.appendChild(div);
+}
+function addPfRow(h){
+  h=h||{market:'KR',code:'',name:'',qty:'',avg:'',buyFx:''};
+  var tb=document.getElementById("pfEditBody");
+  var tr=document.createElement('tr');
+  var isUs=h.market==='US';
+  tr.innerHTML=
+     '<td><select class="e-mk" onchange="pfMkChange(this)">'
+       +'<option value="KR"'+(!isUs?' selected':'')+'>국내</option>'
+       +'<option value="US"'+(isUs?' selected':'')+'>해외</option></select></td>'
+    +'<td><input class="e-cd" value="'+escAttr(h.code)+'"></td>'
+    +'<td><input class="e-nm" value="'+escAttr(h.name)+'" placeholder="(자동)"></td>'
+    +'<td><input class="e-qt" type="number" value="'+(h.qty||'')+'"></td>'
+    +'<td><input class="e-av" type="number" value="'+(h.avg||'')+'"></td>'
+    +'<td><input class="e-fx" type="number" value="'+(h.buyFx||'')+'" placeholder="'+(isUs?'예 1350':'—')+'"'+(isUs?'':' disabled')+'></td>'
+    +'<td style="white-space:nowrap"><button class="buyb" title="추가매수(적립)" onclick="pfBuyRow(this)">➕</button>'
+      +'<button class="delx" onclick="pfDelRow(this)">×</button></td>';
+  tb.appendChild(tr);
+}
+function pfMkChange(sel){
+  var fx=sel.closest('tr').querySelector('.e-fx');
+  if(sel.value==='US'){ fx.disabled=false; fx.placeholder='예 1350'; }
+  else { fx.disabled=true; fx.value=''; fx.placeholder='—'; }
+}
+function pfDelRow(btn){
+  var tr=btn.closest('tr'), nx=tr.nextElementSibling;
+  if(nx && nx.classList.contains('buylot')) nx.remove();
+  tr.remove();
+}
+// 종목 추가매수(적립) — 평단·매입환율 가중평균 갱신
+function pfBuyRow(btn){
+  var tr=btn.closest('tr'), nx=tr.nextElementSibling;
+  if(nx && nx.classList.contains('buylot')){ nx.remove(); return; }
+  var isUs=tr.querySelector('.e-mk').value==='US';
+  var sub=document.createElement('tr'); sub.className='buylot';
+  sub.innerHTML='<td colspan="7"><div class="lotbox">➕ 추가매수 · '
+    +'수량<input class="b-q" type="number"> 단가('+(isUs?'$':'₩')+')<input class="b-p" type="number">'
+    +(isUs?' 환율<input class="b-f" type="number" placeholder="예 1385">':'')
+    +' <button class="lotap" onclick="pfBuyApply(this)">적용</button>'
+    +' <button class="lotcx" onclick="this.closest(\'tr\').remove()">취소</button>'
+    +' <span class="lotmsg"></span></div></td>';
+  tr.parentNode.insertBefore(sub, tr.nextElementSibling);
+}
+function pfBuyApply(btn){
+  var sub=btn.closest('tr'), tr=sub.previousElementSibling;
+  var isUs=tr.querySelector('.e-mk').value==='US';
+  var q=+sub.querySelector('.b-q').value, p=+sub.querySelector('.b-p').value;
+  var f=isUs? (+ (sub.querySelector('.b-f')||{value:0}).value) : 0;
+  if(!q||!p||(isUs&&!f)){ sub.querySelector('.lotmsg').textContent='수량·단가'+(isUs?'·환율':'')+' 입력'; return; }
+  var qty=+tr.querySelector('.e-qt').value||0, avg=+tr.querySelector('.e-av').value||0, bfx=+tr.querySelector('.e-fx').value||0;
+  var nq=qty+q, navg=(avg*qty + p*q)/nq;
+  tr.querySelector('.e-qt').value=nq;
+  tr.querySelector('.e-av').value=isUs? Math.round(navg*10000)/10000 : Math.round(navg);
+  if(isUs){
+    var wOld=avg*qty, wNew=p*q;
+    var nbfx = (bfx>0 && (wOld+wNew)>0) ? (wOld*bfx + wNew*f)/(wOld+wNew) : f;
+    tr.querySelector('.e-fx').value=Math.round(nbfx);
+  }
+  sub.remove();
+}
+// 달러현금 환전 — 평균 환전환율 가중평균 갱신
+function pfFxBuy(){
+  var box=document.getElementById('pfFxBox');
+  if(box.innerHTML){ box.innerHTML=''; return; }
+  box.innerHTML='<div class="lotbox">➕ 환전(원→달러) · 환전 $<input class="fx-a" type="number"> '
+    +'환율<input class="fx-f" type="number" placeholder="예 1385"> '
+    +'<button class="lotap" onclick="pfFxApply()">적용</button> '
+    +'<button class="lotcx" onclick="document.getElementById(\'pfFxBox\').innerHTML=\'\'">취소</button> '
+    +'<span class="lotmsg"></span></div>';
+}
+function pfFxApply(){
+  var box=document.getElementById('pfFxBox');
+  var a=+box.querySelector('.fx-a').value, f=+box.querySelector('.fx-f').value;
+  if(!a||!f){ box.querySelector('.lotmsg').textContent='금액·환율 입력'; return; }
+  var usd=+document.getElementById('pfCashUsd').value||0, cfx=+document.getElementById('pfCashUsdFx').value||0;
+  var nu=usd+a, ncfx=(cfx>0 && nu>0)? (usd*cfx + a*f)/nu : f;
+  document.getElementById('pfCashUsd').value=Math.round(nu*100)/100;
+  document.getElementById('pfCashUsdFx').value=Math.round(ncfx);
+  box.innerHTML='';
+}
+function escAttr(s){ return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function savePf(){
+  var rows=[];
+  document.querySelectorAll("#pfEditBody tr").forEach(function(tr){
+    var code=tr.querySelector('.e-cd').value.trim();
+    if(!code) return;
+    rows.push({ market:tr.querySelector('.e-mk').value,
+      code:code, name:tr.querySelector('.e-nm').value.trim(),
+      qty:tr.querySelector('.e-qt').value, avg:tr.querySelector('.e-av').value,
+      buyFx:tr.querySelector('.e-fx').value });
+  });
+  var rps=[];
+  document.querySelectorAll("#pfRpBody .rp-row").forEach(function(dv){
+    var amt=dv.querySelector('.rp-am').value;
+    if(!(+amt>0)) return;
+    rps.push({ name:dv.querySelector('.rp-nm').value.trim(), amount:amt,
+      rate:dv.querySelector('.rp-rt').value, start:dv.querySelector('.rp-st').value,
+      days:dv.querySelector('.rp-dy').value });
+  });
+  var payload={ cash:document.getElementById("pfCash").value,
+    cashUsd:document.getElementById("pfCashUsd").value,
+    cashUsdFx:document.getElementById("pfCashUsdFx").value, holdings:rows, rp:rps };
+  busy(true);
+  document.getElementById("pane-pf").innerHTML='<div class="state">저장하고 시세 불러오는 중…</div>';
+  google.script.run.withSuccessHandler(function(){ pfEditing=false; loadPf(); })
+    .withFailureHandler(function(e){ alert('저장 실패: '+e.message); busy(false); })
+    .pf_save(payload);
+}
+
+loadHome();
+
+/* ── 🗾 여행 ── */
+var tripData=null;
+function tripWho(){ try{return localStorage.getItem('tripWho')||'';}catch(e){return '';} }
+function tripSetWho(v){ try{localStorage.setItem('tripWho',v);}catch(e){} }
+function loadTrip(){
+  busy(true);
+  document.getElementById("pane-trip").innerHTML='<div class="state">불러오는 중…</div>';
+  google.script.run.withSuccessHandler(function(d){
+    tripData=d;renderTrip(d);loaded.trip=true;busy(false);
+  }).withFailureHandler(function(e){
+    document.getElementById("pane-trip").innerHTML='<div class="state">불러오기 실패: '+e.message+'</div>';busy(false);
+  }).getTrip();
+}
+function tripPatch(d){ tripData=d;renderTrip(d); }
+
+/* 접기 상태 (기기에 기억) */
+var tvFold={};
+try{ tvFold=JSON.parse(localStorage.getItem('tripFold')||'{}'); }catch(e){ tvFold={}; }
+function tvSaveFold(){ try{localStorage.setItem('tripFold',JSON.stringify(tvFold));}catch(e){} }
+function tvIsFold(id,def){ return (id in tvFold)?tvFold[id]:!!def; }
+function tvToggle(el,id){
+  var b=document.getElementById('fb-'+id);
+  var closing=!b.classList.contains('hide');
+  b.classList.toggle('hide',closing);
+  el.classList.toggle('cl',closing);
+  tvFold[id]=closing;tvSaveFold();
+  if(!closing) tvMapsInit();
+}
+function tvSec(id,title,body,cnt,def,cls){
+  var f=tvIsFold(id,def);
+  return '<div class="'+(cls||'rc')+'"><div class="fh'+(f?' cl':'')+'" onclick="tvToggle(this,\''+id+'\')">'+
+    '<span class="cv">▼</span><span>'+title+'</span>'+(cnt?'<span class="cnt">'+cnt+'</span>':'')+'</div>'+
+    '<div class="fb'+(f?' hide':'')+'" id="fb-'+id+'">'+body+'</div></div>';
+}
+
+function renderTrip(d){
+  var i=d.info,w=tripWho(),ar=d.archived,def=ar;
+  var ddayTxt=ar?'보관':(d.dday>0?'D-'+d.dday:(d.dday===0?'D-DAY':'다녀옴'));
+  var hero='<div class="tv-hero'+(ar?' arch':'')+'"><div class="tv-dday">'+ddayTxt+'</div>'+
+    '<h2>🌏 '+i.title+(ar?'<span class="tv-badge">📦 보관됨</span>':'')+'</h2>'+
+    '<div class="sub">2026. 9. 24(목) ~ 9. 26(토) · '+i.hotel.nights+'박</div>'+
+    '<button class="tv-archbtn" onclick="tripArchive('+(ar?'false':'true')+')">'+
+      (ar?'📂 보관 해제하고 펼치기':'📦 보관하기 (전부 접기)')+'</button></div>';
+  var fl=tvSec('fl','✈ 항공',i.flights.map(function(f){
+    return '<div class="tv-fl"><span class="no">'+f.no+'</span>'+
+      '<span class="leg2">'+f.dep+' → '+f.arr+'</span>'+
+      '<span class="ap">'+f.depP+' → '+f.arrP+'</span>'+
+      '<span class="meta2">'+f.date.slice(5)+'('+f.dow+') · '+f.dur+' · '+f.air+' · 수하물 '+f.bag+'</span></div>';
+  }).join(''),'',def);
+  var ho=tvSec('ho','🏨 숙소','<div class="tv-hotel"><b>'+i.hotel.name+'</b> ('+i.hotel.nights+'박)<br>'+
+    i.hotel.addr+'<br><a href="'+i.hotel.map+'" target="_blank">지도에서 보기 ↗</a></div>','',def);
+  var who=ar?'':'<div class="tv-who">작성자 <select id="tvWho" onchange="tripSetWho(this.value)">'+
+    ['','남편','아내'].map(function(x){return '<option value="'+x+'"'+(x===w?' selected':'')+'>'+(x||'선택 안 함')+'</option>';}).join('')+
+    '</select> — 일정·가고싶은 곳에 이름이 같이 남아요</div>';
+  var bg=tvSec('bg','💰 예산',tripCostHtml(d),tripCostCnt(d),def);
+  var top='<div class="tv-top"><div>'+fl+ho+'</div><div>'+bg+'</div></div>';
+  var cur=tvCurDay(d);
+  tvRoutes={};
+  var tabs='<div class="tv-dtabs">'+i.days.map(function(ds,idx){
+    var dt=new Date(ds+'T00:00'),n=(d.plan[ds]||[]).length;
+    return '<button id="tvTab'+ds+'" class="'+(ds===cur?'on':'')+'" onclick="tvPickDay(\''+ds+'\')">'+
+      '<b>Day '+(idx+1)+'</b><small>'+(+ds.slice(5,7))+'/'+(+ds.slice(8))+' ('+DOW[dt.getDay()]+')</small>'+
+      (n?'<span>'+n+'</span>':'')+'</button>';
+  }).join('')+'</div>';
+  var panes=i.days.map(function(ds,idx){
+    return '<div class="tv-dpane'+(ds===cur?'':' hide')+'" id="tvDP'+ds+'">'+tripDayPane(d,ds,idx,def)+'</div>';
+  }).join('');
+  var packCnt=d.pack.length?d.pack.filter(function(p){return p.done;}).length+'/'+d.pack.length:'';
+  var bottom='<div class="tv-grid">'+
+    tvSec('mm','💬 여행 메모',
+      '<textarea id="tripMemo" placeholder="맛집 링크·예약번호·서로에게 남길 말…">'+esc(d.memo)+'</textarea>'+
+      '<div class="memobar"><button onclick="tripSaveMemo(this)">저장</button>'+
+      '<span class="mt" id="tripMemoAt"></span></div>','',def,'rc memo')+
+    tvSec('pk','🎒 준비물',tripPackHtml(d.pack),packCnt,def)+
+    tvSec('tp','🧾 참고',
+      '<div class="tv-tip">· Visit Japan Web 사전등록(입국·세관 QR)<br>'+
+      '· 나리타 T1 → 마이하마: 액세스특급 → 히가시마쓰도 → JR 무사시노선 東京행 (약 1시간 35분)<br>'+
+      '· 호텔 ↔ 디즈니 리조트라인 셔틀 운행<br>· 콘센트 110V A타입 · 현금 조금은 필수</div>','',def)+'</div>';
+  var brief=(d.brief||[]).map(function(b){
+    return tvSec(b.id,b.title,b.html,'',true,'rc bf-rc');
+  }).join('');
+  var briefBox=brief?'<div class="tv-brief"><div class="tv-brief-h">📌 출발 전에 한 번씩 — 눌러서 펼치기</div>'+brief+'</div>':'';
+  document.getElementById("pane-trip").innerHTML=hero+who+top+briefBox+tabs+panes+bottom;
+  tvMapsInit();
+}
+function tvCurDay(d){
+  var days=d.info.days,s='';
+  try{ s=localStorage.getItem('tripDay')||''; }catch(e){}
+  if(days.indexOf(s)>=0) return s;
+  return days.indexOf(d.today)>=0?d.today:days[0];
+}
+function tvPickDay(ds){
+  try{ localStorage.setItem('tripDay',ds); }catch(e){}
+  tripData.info.days.forEach(function(x){
+    document.getElementById('tvDP'+x).classList.toggle('hide',x!==ds);
+    document.getElementById('tvTab'+x).classList.toggle('on',x===ds);
+  });
+  tvMapsInit();
+}
+/* 한 날짜 = 왼쪽(지도·일정·추가) + 오른쪽(이 날 추천 · 언제든 추천 · 보관함) */
+function tripDayPane(d,ds,idx,def){
+  var sug=d.sug||[];
+  var mine=sug.filter(function(x){return x.day===ds;});
+  var any=sug.filter(function(x){return !x.day;});
+  var cnt=function(a){ var n=a.filter(function(x){return !x.took;}).length; return n?n+'개':''; };
+  var right=
+    tvSec('sg'+idx,'💡 이 날 추천 — 골라 담기',
+      (mine.length?mine.map(function(x){return sugCard(x,ds);}).join(''):'<div class="tv-tip">이 날 추천은 없어요. 아래 「언제든」에서 골라보세요.</div>')+
+      '<div class="tv-sgfoot">📅 일정에 = 이 날 일정으로 · 📍 보관 = 보관함으로 · 숨기기 = 목록에서 빼기 '+
+      '<button onclick="tripSugReset()">숨긴 추천 다시 보기</button></div>',cnt(mine),def)+
+    tvSec('sa'+idx,'✨ 언제든 추천',any.map(function(x){return sugCard(x,ds);}).join('')||'<div class="tv-tip">없음</div>',cnt(any),true)+
+    tvSec('ws'+idx,'📍 보관함 (둘이 같이 봄)',tripWishHtml(d.wish,ds,idx),d.wish.length?d.wish.length+'곳':'',def);
+  return '<div class="tv-dgrid"><div>'+tripDayHtml(ds,idx,d.plan[ds]||[])+'</div><div>'+right+'</div></div>';
+}
+function tripArchive(v){
+  if(v&&!confirm('여행을 보관할까요?\n전부 접힌 상태로 남고, 언제든 다시 펼쳐볼 수 있어요.')) return;
+  tvFold={};tvSaveFold();
+  busy(true);
+  google.script.run.withSuccessHandler(function(d){tripPatch(d);busy(false);})
+    .withFailureHandler(function(e){alert('실패: '+e.message);busy(false);})
+    .tripSetArchived(v);
+}
+/* 🗺 Day 동선 지도 — 일정 제목에서 장소를 찾아 순서대로 잇는다. 괄호 안은 무시, 「A → B」면 뒤쪽이 목적지 */
+var TV_PLACES=[
+  {k:'nrt',re:/나리타/g,n:'나리타공항',q:'成田空港',ll:[35.7640,140.3860],air:1},
+  {k:'hms',re:/히가시마쓰도/g,n:'히가시마쓰도',q:'東松戸駅',ll:[35.7707,139.9435]},
+  {k:'mhm',re:/마이하마|이크스피아리/g,n:'마이하마',q:'舞浜駅',ll:[35.6365,139.8840]},
+  {k:'shr',re:/쉐라톤|호텔 체크인|체크아웃/g,n:'쉐라톤',q:'シェラトン・グランデ・トーキョーベイ・ホテル',ll:[35.6268,139.8893]},
+  {k:'tds',re:/디즈니씨|디즈니 씨/g,n:'디즈니씨',q:'東京ディズニーシー',ll:[35.6267,139.8850]},
+  {k:'tdl',re:/디즈니랜드/g,n:'디즈니랜드',q:'東京ディズニーランド',ll:[35.6329,139.8804]},
+  {k:'asa',re:/아사쿠사|센소지|가미나리몬|나카미세/g,n:'아사쿠사',q:'浅草寺',ll:[35.7127,139.7964]},
+  {k:'uen',re:/우에노/g,n:'우에노',q:'上野駅',ll:[35.7138,139.7770]},
+  {k:'gin',re:/긴자/g,n:'긴자',q:'銀座駅',ll:[35.6717,139.7650]},
+  {k:'tky',re:/도쿄역/g,n:'도쿄역',q:'東京駅',ll:[35.6812,139.7671]},
+  {k:'sky',re:/오시아게|스카이트리|소라마치|스미다/g,n:'스카이트리',q:'東京スカイツリー',ll:[35.7101,139.8107]},
+  {k:'shb',re:/시부야/g,n:'시부야',q:'渋谷駅',ll:[35.6580,139.7016]},
+  {k:'hrj',re:/하라주쿠/g,n:'하라주쿠',q:'原宿駅',ll:[35.6702,139.7027]},
+  {k:'omt',re:/오모테산도|캣스트리트|키디랜드|자이루|GYRE|모마|세다이/g,n:'오모테산도·캣스트리트',q:'表参道駅',ll:[35.6685,139.7070]},
+  {k:'odb',re:/오다이바/g,n:'오다이바',q:'お台場',ll:[35.6300,139.7753]},
+  {k:'shn',re:/시나가와/g,n:'시나가와',q:'品川駅',ll:[35.6285,139.7388]},
+  {k:'ikb',re:/이케부쿠로/g,n:'이케부쿠로',q:'池袋駅',ll:[35.7295,139.7109]},
+  {k:'azb',re:/아자부다이|팀랩|teamLab/g,n:'아자부다이',q:'麻布台ヒルズ',ll:[35.6604,139.7400]},
+  {k:'akb',re:/아키하바라/g,n:'아키하바라',q:'秋葉原駅',ll:[35.6984,139.7731]},
+  {k:'snj',re:/신주쿠/g,n:'신주쿠',q:'新宿駅',ll:[35.6896,139.7006]},
+  {k:'rpg',re:/롯폰기/g,n:'롯폰기',q:'六本木ヒルズ',ll:[35.6605,139.7292]},
+  {k:'tys',re:/도요스|키자니아/g,n:'도요스',q:'豊洲駅',ll:[35.6550,139.7964]},
+  {k:'tkj',re:/츠키지|쓰키지/g,n:'츠키지',q:'築地場外市場',ll:[35.6654,139.7707]},
+  {k:'nhb',re:/니혼바시/g,n:'니혼바시',q:'日本橋駅',ll:[35.6823,139.7745]},
+  {k:'tkt',re:/도쿄타워/g,n:'도쿄타워',q:'東京タワー',ll:[35.6586,139.7454]}
+];
+var tvRoutes={};
+function tvMatch(s){
+  var t=String(s||'').replace(/\([^)]*\)/g,''),best=null,bp=-1;
+  TV_PLACES.forEach(function(p){
+    p.re.lastIndex=0;var m;
+    while((m=p.re.exec(t))){ if(m.index>bp){bp=m.index;best=p;} }
+  });
+  return best;
+}
+/* 일정 한 줄의 장소 — 추가할 때 찾은 좌표(ll)가 우선. 이미 아는 곳 400m 안이면 그 곳으로 합친다 */
+function tvPlaceOf(it){
+  if(it.ll){
+    var near=null;
+    TV_PLACES.forEach(function(p){
+      var dy=(p.ll[0]-it.ll[0])*111,dx=(p.ll[1]-it.ll[1])*91;
+      if(Math.sqrt(dx*dx+dy*dy)<0.4) near=p;
+    });
+    if(near) return near;
+    return {k:'g'+it.ll[0].toFixed(4)+','+it.ll[1].toFixed(4),n:it.pn||it.title,q:it.pq||it.ll.join(','),ll:it.ll};
+  }
+  return tvMatch(it.title)||tvMatch(it.pq)||tvMatch(it.area);
+}
+function tvStops(items){
+  var out=[];
+  items.forEach(function(it){
+    var p=tvPlaceOf(it);
+    if(!p) return;
+    var last=out[out.length-1];
+    if(last&&last.p.k===p.k) return;
+    out.push({p:p,t:it.time||''});
+  });
+  return out;
+}
+function tvGo(from,to){
+  return 'https://www.google.com/maps/dir/?api=1'+(from?'&origin='+encodeURIComponent(from.q):'')+
+    '&destination='+encodeURIComponent(to.q)+'&travelmode=transit';
+}
+function tripRouteMap(idx,items){
+  var st=tvStops(items);
+  if(st.length<2) return '';
+  tvRoutes[idx]=st;
+  var gm='https://www.google.com/maps/dir/'+st.map(function(s){return encodeURIComponent(s.p.q);}).join('/');
+  var off=st.some(function(s){return s.p.air;})&&st.filter(function(s){return !s.p.air;}).length>=2;
+  return '<div class="tv-map" id="tvMap'+idx+'"></div>'+
+    '<div class="tv-mapbar">'+(off?'<span>✈ 공항 구간은 회색 점선(화면 밖)</span>':'<span>번호 = 가는 순서</span>')+
+    '<a href="'+gm+'" target="_blank">구글맵에서 경로 열기 ↗</a></div>';
+}
+function tvMapsInit(){
+  if(typeof L==='undefined') return;
+  Object.keys(tvRoutes).forEach(function(idx){
+    var el=document.getElementById('tvMap'+idx);
+    if(!el||!el.offsetParent) return;
+    if(el._tvMap){ el._tvMap.invalidateSize(); return; }
+    var st=tvRoutes[idx];
+    var map=L.map(el,{zoomControl:true,attributionControl:true,scrollWheelZoom:false,
+      dragging:!L.Browser.mobile,tap:false});
+    el._tvMap=map;
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      {maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
+    for(var i=1;i<st.length;i++){
+      var a=st[i-1],b=st[i],air=a.p.air||b.p.air;
+      L.polyline([a.p.ll,b.p.ll],{color:air?'#9aa3b2':'#2563eb',weight:air?2:4,opacity:air?.8:.85,
+        dashArray:air?'4 6':null,className:air?'':'tv-ant'}).addTo(map);
+    }
+    var seen={};
+    st.forEach(function(s,i){
+      var g=seen[s.p.k];
+      if(g){ g.nums.push(i+1);g.times.push(s.t);return; }
+      seen[s.p.k]={p:s.p,nums:[i+1],times:[s.t]};
+    });
+    Object.keys(seen).forEach(function(k){
+      var g=seen[k],lab=g.nums.join('·');
+      var ic=L.divIcon({className:'',iconSize:null,
+        html:'<div class="tv-pin'+(g.nums.length>1?' w':'')+(g.p.air?' air':'')+'">'+lab+'</div>'});
+      L.marker(g.p.ll,{icon:ic}).addTo(map)
+        .bindTooltip(g.p.n,{permanent:true,direction:'right',offset:[12,0],className:'tv-lb'})
+        .bindPopup('<b>'+g.p.n+'</b><br>'+g.times.filter(Boolean).join(' · '));
+    });
+    var core=st.filter(function(s){return !s.p.air;});
+    var pts=(core.length>=2?core:st).map(function(s){return s.p.ll;});
+    map.fitBounds(pts,{padding:[28,28],maxZoom:14});
+  });
+}
+function tripDayHtml(ds,idx,items){
+  var rm=items.length>1?tripRouteMap(idx,items):'';
+  var route=rm?'<div class="tv-route-wrap">'+rm+'</div>':'';
+  var prev=null;
+  var body=items.length?items.map(function(x){
+    var p=tvPlaceOf(x),go='';
+    if(p&&(!prev||prev.k!==p.k)){
+      go='<a class="tv-go" href="'+tvGo(prev,p)+'" target="_blank">🧭 '+(prev?esc(prev.n)+' → ':'')+esc(p.n)+' 길찾기</a>';
+      prev=p;
+    }
+    return '<div class="tv-it"><span class="tt">'+(x.time||'–')+'</span>'+
+      '<span class="bd"><div class="t1">'+esc(x.title)+'</div>'+
+      (x.memo?'<div class="t2">'+esc(x.memo)+'</div>':'')+go+'</span>'+
+      (x.by?'<span class="by">'+esc(x.by)+'</span>':'')+
+      '<button class="tv-x" title="보관함으로 빼기" onclick="tripToWish(\''+ds+'\',\''+x.id+'\')">📥</button>'+
+      '<button class="tv-x" title="삭제" onclick="tripDel(\''+ds+'\',\''+x.id+'\')">×</button></div>';
+  }).join(''):'<div class="empty">아직 일정이 없어요</div>';
+  var add='<div class="tv-add"><input type="time" id="tvT'+idx+'">'+
+    '<input class="ti" type="text" id="tvN'+idx+'" placeholder="할 일" onkeydown="if(event.key===\'Enter\')tripAdd(\''+ds+'\','+idx+')">'+
+    '<input class="me" type="text" id="tvL'+idx+'" placeholder="📍 장소 (지도·길찾기용 · 영어/일본어가 잘 찾아짐)">'+
+    '<input class="me" type="text" id="tvM'+idx+'" placeholder="메모">'+
+    '<button onclick="tripAdd(\''+ds+'\','+idx+')">추가</button></div>';
+  return '<div class="tv-day">'+route+body+add+'</div>';
+}
+function tripAdd(ds,idx){
+  var t=document.getElementById('tvT'+idx).value;
+  var n=document.getElementById('tvN'+idx).value.trim();
+  var l=document.getElementById('tvL'+idx).value.trim();
+  var m=document.getElementById('tvM'+idx).value.trim();
+  if(!n&&l) n=l;
+  if(!n){alert('내용을 입력하세요');return;}
+  busy(true);
+  google.script.run.withSuccessHandler(function(d){tripPatch(d);busy(false);})
+    .withFailureHandler(function(e){alert('추가 실패: '+e.message);busy(false);})
+    .tripAddItem(ds,t,n,m,tripWho(),l);
+}
+function tripDel(ds,id){
+  google.script.run.withSuccessHandler(tripPatch).tripDelItem(ds,id);
+}
+function tripToWish(ds,id){
+  busy(true);
+  google.script.run.withSuccessHandler(function(d){tripPatch(d);busy(false);})
+    .withFailureHandler(function(e){alert(e.message);busy(false);})
+    .tripPlanToWish(ds,id);
+}
+function tripWishPlan(id,ds){
+  busy(true);
+  google.script.run.withSuccessHandler(function(d){tripPatch(d);busy(false);})
+    .withFailureHandler(function(e){alert(e.message);busy(false);})
+    .tripWishToPlan(id,ds,tripWho());
+}
+function sugCard(x,ds){
+  var CAT={spot:'📍',food:'🍜',shop:'🛍',tip:'💡'};
+  return '<div class="tv-sug'+(x.took?' took':'')+'">'+
+    '<div class="sh"><b>'+(CAT[x.cat]||'📍')+' '+esc(x.name)+'</b>'+
+    '<span class="tg">'+esc(x.area)+'</span>'+
+    (x.time?'<span class="tg tm">'+x.time+'</span>':'')+
+    (x.kid?'<span class="tg kid">👶 OK</span>':'')+'</div>'+
+    '<div class="sw" title="눌러서 펼치기" onclick="this.classList.toggle(\'open\')">'+esc(x.why)+'</div>'+
+    '<div class="sb">'+
+    (x.links||[]).map(function(l){
+      return '<a href="'+l[1]+'" target="_blank">'+esc(l[0])+' ↗</a>';
+    }).join('')+
+    (x.took?'<span class="dn">✔ 담음</span>':
+      (x.cat==='tip'&&x.area==='짐'?'':'<button onclick="tripSugPlan(\''+x.id+'\',\''+ds+'\')">📅 일정에</button>')+
+      '<button class="w" onclick="tripSugWish(\''+x.id+'\')">📍 보관</button>'+
+      '<button class="x" onclick="tripSugX(\''+x.id+'\')">숨기기</button>')+
+    '</div></div>';
+}
+function tripSugPlan(id,ds){
+  busy(true);
+  google.script.run.withSuccessHandler(function(d){
+    busy(false); if(d&&d.error){alert(d.error);return;} tripPatch(d);
+  }).withFailureHandler(function(e){busy(false);alert(e.message);})
+    .tripSugToPlan(id,ds||'',tripWho());
+}
+function tripSugWish(id){
+  busy(true);
+  google.script.run.withSuccessHandler(function(d){busy(false);tripPatch(d);})
+    .withFailureHandler(function(e){busy(false);alert(e.message);})
+    .tripSugToWish(id,tripWho());
+}
+function tripSugX(id){ google.script.run.withSuccessHandler(tripPatch).tripSugHide(id); }
+function tripSugReset(){ google.script.run.withSuccessHandler(tripPatch).tripSugResetHidden(); }
+
+function tripWishHtml(list,ds,idx){
+  var dn='Day '+(idx+1);
+  var rows=list.length?list.map(function(w){
+    return '<div class="tv-wish"><button class="lk" onclick="tripLike(\''+w.id+'\')">👍 '+(w.like||0)+'</button>'+
+      '<span class="wn">'+esc(w.name)+
+      ((w.area||w.note||w.by)?'<small>'+[w.area,w.note,w.by?'— '+w.by:''].filter(Boolean).map(esc).join(' · ')+'</small>':'')+
+      '</span>'+(w.url?'<a class="wl" href="'+w.url+'" target="_blank">↗</a>':'')+
+      '<button class="wp" onclick="tripWishPlan(\''+w.id+'\',\''+ds+'\')">📅 '+dn+'에</button>'+
+      '<button class="tv-x" onclick="tripDelWish(\''+w.id+'\')">×</button></div>';
+  }).join(''):'<div class="empty" style="padding:8px 0">가고 싶은 곳을 서로 담아보세요</div>';
+  return rows+'<div class="tv-add"><input class="ti" type="text" id="wsN'+idx+'" placeholder="장소 (예: 시부야 스카이)" onkeydown="if(event.key===\'Enter\')tripAddWish('+idx+')">'+
+    '<input class="me" type="text" id="wsA'+idx+'" placeholder="지역">'+
+    '<input class="me" type="text" id="wsM'+idx+'" placeholder="메모">'+
+    '<input class="me" type="text" id="wsU'+idx+'" placeholder="링크(인스타·지도) 붙여넣기">'+
+    '<button onclick="tripAddWish('+idx+')">보관</button></div>';
+}
+function tripAddWish(idx){
+  var g=function(k){return document.getElementById(k+idx).value.trim();};
+  var n=g('wsN');
+  if(!n){alert('장소를 입력하세요');return;}
+  google.script.run.withSuccessHandler(tripPatch).tripAddWish(n,g('wsA'),g('wsM'),tripWho(),g('wsU'));
+}
+function tripLike(id){ google.script.run.withSuccessHandler(tripPatch).tripLikeWish(id); }
+function tripDelWish(id){ google.script.run.withSuccessHandler(tripPatch).tripDelWish(id); }
+function tripPackHtml(list){
+  var done=list.filter(function(p){return p.done;}).length;
+  var rows=list.map(function(p){
+    return '<div class="tv-pk'+(p.done?' done':'')+'">'+
+      '<input type="checkbox"'+(p.done?' checked':'')+' onchange="tripPack(\''+p.id+'\')">'+
+      '<span class="pn">'+esc(p.name)+'</span>'+
+      '<button class="tv-x" onclick="tripDelPack(\''+p.id+'\')">×</button></div>';
+  }).join('');
+  return '<div class="tv-count" style="color:var(--muted);font-size:12px;margin-bottom:6px">'+done+' / '+list.length+' 완료</div>'+rows+
+    '<div class="tv-add"><input class="ti" type="text" id="pkN" placeholder="준비물 추가" onkeydown="if(event.key===\'Enter\')tripAddPack()">'+
+    '<button onclick="tripAddPack()">추가</button></div>';
+}
+function tripPack(id){ google.script.run.withSuccessHandler(tripPatch).tripTogglePack(id); }
+function tripDelPack(id){ google.script.run.withSuccessHandler(tripPatch).tripDelPack(id); }
+function tripAddPack(){
+  var n=document.getElementById('pkN').value.trim();
+  if(!n) return;
+  google.script.run.withSuccessHandler(tripPatch).tripAddPack(n);
+}
+/* 💰 예산 */
+function tripCostKrw(c,jpy){ return c.cur==='JPY' ? (c.amt||0)*(jpy/100) : (c.amt||0); }
+function tripCostCnt(d){
+  var l=d.cost||[]; if(!l.length) return '';
+  var jpy=d.jpy||950,s=0;
+  l.forEach(function(c){ s+=tripCostKrw(c,jpy); });
+  return Math.round(s/10000).toLocaleString()+'만';
+}
+function tripCostHtml(d){
+  var l=d.cost||[],jpy=d.jpy||950,krw=0,yen=0;
+  var rows=l.map(function(c){
+    krw+=tripCostKrw(c,jpy); if(c.cur==='JPY') yen+=c.amt||0;
+    var amt=c.cur==='JPY' ? '¥'+(c.amt||0).toLocaleString() : won(c.amt);
+    var sub=c.cur==='JPY' ? '<span class="cw">≈'+won(tripCostKrw(c,jpy))+'</span>' : '';
+    return '<div class="tv-cost"><span class="cn">'+esc(c.name)+'</span>'+
+      '<span class="ca">'+amt+'</span>'+sub+
+      '<button class="tv-x" onclick="tripDelCost(\''+c.id+'\')">×</button></div>';
+  }).join('')||'<div class="empty">아직 기록한 지출이 없어요.</div>';
+  var bud=d.budget||0;
+  var sum='<div class="tv-costsum">';
+  if(yen) sum+='<div class="row">엔화 지출<b>¥'+Math.round(yen).toLocaleString()+'</b></div>';
+  sum+='<div class="row tot">지금까지 쓴 돈<b>'+won(krw)+'</b></div>';
+  if(bud>0){
+    var pct=Math.min(100,krw/bud*100),over=krw>bud;
+    sum+='<div class="tv-bar'+(over?' over':'')+'"><i style="width:'+pct.toFixed(1)+'%"></i></div>'+
+      '<div class="row">'+(over?'예산 초과':'남은 예산')+
+      '<b>'+won(Math.abs(bud-krw))+'</b></div>';
+  }
+  sum+='<div class="tv-fxnote">100엔 = '+Math.round(jpy).toLocaleString()+'원 (네이버 · 3시간마다 갱신)</div></div>';
+  var bg='<div class="tv-bg">총예산 <input type="text" id="cstB" placeholder="0" value="'+
+    (bud>0?bud.toLocaleString():'')+'" onkeydown="if(event.key===\'Enter\')tripSetBudget()">원'+
+    '<button onclick="tripSetBudget()">저장</button></div>';
+  var add='<div class="tv-add">'+
+    '<input class="ti" type="text" id="cstN" placeholder="항목 (예: 디즈니랜드 티켓)" onkeydown="if(event.key===\'Enter\')tripAddCost()">'+
+    '<input class="am" type="text" id="cstA" placeholder="금액" onkeydown="if(event.key===\'Enter\')tripAddCost()">'+
+    '<select id="cstC"><option value="KRW">원</option><option value="JPY">엔</option></select>'+
+    '<button onclick="tripAddCost()">추가</button></div>';
+  return rows+sum+bg+add;
+}
+function tripNum(id){ return Number((document.getElementById(id).value||'').replace(/[^0-9.]/g,''))||0; }
+function tripAddCost(){
+  var n=document.getElementById('cstN').value.trim(),a=tripNum('cstA');
+  if(!n||!a) return;
+  busy(true);
+  google.script.run.withSuccessHandler(function(d){busy(false);tripPatch(d);})
+    .tripAddCost(n,a,document.getElementById('cstC').value);
+}
+function tripDelCost(id){ google.script.run.withSuccessHandler(tripPatch).tripDelCost(id); }
+function tripSetBudget(){
+  busy(true);
+  google.script.run.withSuccessHandler(function(d){busy(false);tripPatch(d);})
+    .tripSetBudget(tripNum('cstB'));
+}
+
+function tripSaveMemo(btn){
+  var t=document.getElementById('tripMemo').value;
+  btn.disabled=true;btn.textContent='저장 중…';
+  google.script.run.withSuccessHandler(function(r){
+    btn.disabled=false;btn.textContent='저장';
+    document.getElementById('tripMemoAt').textContent='마지막 저장 '+r.at;
+    if(tripData) tripData.memo=t;
+  }).withFailureHandler(function(e){
+    btn.disabled=false;btn.textContent='저장';alert('저장 실패: '+e.message);
+  }).tripSaveMemo(t);
+}
+</script>
+<script>
+/* ── 🗣 아빠표영어 ──
+   보기 / 따라 말하기(문장마다 멈춤 → 아이가 말함 → 아이 목소리 다시 들려주기 → 칭찬) /
+   반복 / 문장 나누기. 문장 구간은 서버에 저장돼 두 폰이 같이 쓴다. */
+var eg={data:null, vid:null, mode:'watch', player:null, pend:null, timer:null, rate:1,
+  segs:[], units:[], sel:0, dirty:false, cutStart:0,
+  rep:{n:3, speed:1, on:false, left:0, timer:null},
+  say:{chunk:4, twice:false, back:true, stt:false, auto:true, idx:0, running:false, said:0},
+  phase:'', mic:null, rec:null, sr:null, ctx:null, audio:null, wake:null,
+  recTimer:null, vadTimer:null, autoTimer:null, heardVoice:false, quietTries:0};
+
+function egA(s){ return esc(String(s==null?'':s)).replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function egFind(id){ return ((eg.data&&eg.data.videos)||[]).filter(function(v){ return v.id===id; })[0]; }
+function egFmt(t){ t=Math.max(0,t||0); var m=Math.floor(t/60), s=(t-m*60).toFixed(1); return m+':'+(s<10?'0':'')+s; }
+
+function loadEng(){
+  busy(true);
+  google.script.run.withSuccessHandler(function(d){
+    eg.data=d; loaded.eng=true; busy(false);
+    if(eg.vid){ var v=egFind(eg.vid.id); if(v) eg.vid=v; return; }   // 영상 화면은 그대로 둔다
+    renderEngHome();
+  }).withFailureHandler(function(e){
+    document.getElementById('pane-eng').innerHTML='<div class="state">불러오기 실패: '+esc(e.message)+'</div>'; busy(false);
+  }).eng_data();
+}
+
+function renderEngHome(){
+  egStop(); eg.vid=null;
+  if(eg.player){ try{ eg.player.destroy(); }catch(e){} eg.player=null; }
+  var d=eg.data||{}, log=d.log||{}, today=d.today||'';
+  var h='<div class="eg-top"><div class="eg-star">오늘 따라 말한 문장 <b>'+(log[today]||0)+'</b>개 🌟</div><div class="eg-week">';
+  for(var i=6;i>=0;i--){
+    var dt=new Date(today+'T00:00'); dt.setDate(dt.getDate()-i);
+    var k=dt.getFullYear()+'-'+p2(dt.getMonth()+1)+'-'+p2(dt.getDate()), n=log[k]||0;
+    h+='<span><i>'+(n>=10?'🌟':(n>0?'⭐':'·'))+'</i>'+DOW[dt.getDay()]+'</span>';
+  }
+  h+='</div></div>';
+  h+='<div class="eg-add"><input id="egUrl" placeholder="유튜브 주소 붙여넣기 (슈퍼심플송·페파피그…)" autocomplete="off">'
+    +'<button onclick="egAdd()">추가</button></div>';
+  var vs=d.videos||[];
+  if(!vs.length){
+    h+='<div class="empty">유튜브 앱에서 영상 → <b>공유</b> → <b>링크 복사</b> → 위 칸에 붙여넣기.<br>'
+      +'2~3분짜리 짧은 노래부터 시작하면 좋아요.</div>';
+  } else {
+    h+='<div class="eg-grid">';
+    vs.forEach(function(v){
+      h+='<div class="eg-card" onclick="egOpen(\''+egA(v.id)+'\')">'
+        +'<img loading="lazy" src="https://i.ytimg.com/vi/'+egA(v.yt)+'/mqdefault.jpg" alt="">'
+        +'<button class="x" title="삭제" onclick="event.stopPropagation();egDel(\''+egA(v.id)+'\')">✕</button>'
+        +'<div class="t">'+esc(v.title)+'</div>'
+        +'<div class="s">'+esc(v.ch)+(v.n?' · 문장 '+v.n+'개':' · 문장 나누기 전')+'</div></div>';
+    });
+    h+='</div>';
+  }
+  h+='<div class="eg-note">🗣 <b>따라 말하기</b> — 한 문장씩 멈추면 아이가 따라 말하고, 방금 말한 걸 <b>아이 목소리로 다시 들려줘요</b>. '
+    +'문장을 안 나눈 영상은 몇 초마다 멈춰요.<br>✂ <b>문장 나누기</b>는 처음 한 번만 해두면 두 폰에서 같이 써요.</div>';
+  document.getElementById('pane-eng').innerHTML=h;
+}
+
+function egAdd(){
+  var u=document.getElementById('egUrl').value.trim(); if(!u) return;
+  busy(true);
+  google.script.run.withSuccessHandler(function(d){
+    busy(false); if(d&&d.error){ alert(d.error); return; }
+    eg.data=d; renderEngHome();
+  }).withFailureHandler(function(e){ busy(false); alert('추가 실패: '+e.message); }).eng_addVideo(u);
+}
+function egDel(id){
+  var v=egFind(id); if(!v||!confirm('「'+v.title+'」을(를) 지울까요?\n나눠둔 문장도 같이 지워져요.')) return;
+  busy(true);
+  google.script.run.withSuccessHandler(function(d){ busy(false); eg.data=d; renderEngHome(); })
+    .withFailureHandler(function(e){ busy(false); alert(e.message); }).eng_delVideo(id);
+}
+
+/* 영상 화면 */
+function egOpen(id){
+  var v=egFind(id); if(!v) return;
+  eg.vid=v; eg.segs=(v.segs||[]).map(function(q){ return q.slice(); });
+  eg.mode='say'; eg.sel=0; eg.dirty=false; eg.cutStart=0;
+  document.getElementById('pane-eng').innerHTML=
+    '<button class="eg-back" onclick="egBackHome()">‹ 영상 목록</button>'
+    +'<div class="eg-pw"><div id="egPlayer"></div></div>'
+    +'<div class="eg-modes" id="egModes"></div><div class="eg-panel" id="egPanel"></div>';
+  egMakePlayer(v.yt); egRenderMode();
+}
+function egBackHome(){
+  if(eg.dirty&&!confirm('나눈 문장을 저장하지 않았어요. 그냥 나갈까요?')) return;
+  renderEngHome();
+}
+
+function egLoadApi(cb){
+  if(window.YT&&YT.Player){ cb(); return; }
+  eg.pend=cb;
+  if(!document.getElementById('ytApi')){
+    var s=document.createElement('script'); s.id='ytApi'; s.src='https://www.youtube.com/iframe_api';
+    document.head.appendChild(s);
+  }
+}
+window.onYouTubeIframeAPIReady=function(){ if(eg.pend){ var f=eg.pend; eg.pend=null; f(); } };
+function egMakePlayer(yt){
+  egLoadApi(function(){
+    if(!document.getElementById('egPlayer')) return;
+    eg.player=new YT.Player('egPlayer',{ host:'https://www.youtube-nocookie.com', videoId:yt,
+      playerVars:{ playsinline:1, rel:0, modestbranding:1, cc_load_policy:1, cc_lang_pref:'en', hl:'en', iv_load_policy:3 },
+      events:{ onReady:function(){ if(!eg.segs.length&&eg.mode!=='cut') egRenderMode(); } } });
+  });
+}
+function egT(){ try{ return eg.player.getCurrentTime()||0; }catch(e){ return 0; } }
+function egDur(){ try{ return eg.player.getDuration()||0; }catch(e){ return 0; } }
+
+// s~e 초만 틀고 멈춘 뒤 done
+function egPlaySeg(s,e,done){
+  if(!eg.player||!eg.player.seekTo) return;
+  clearInterval(eg.timer);
+  try{ eg.player.setPlaybackRate(eg.rate||1); }catch(x){}
+  eg.player.seekTo(s,true); eg.player.playVideo();
+  eg.timer=setInterval(function(){
+    if(egT()>=e-0.05){
+      clearInterval(eg.timer); eg.timer=null;
+      eg.player.pauseVideo(); if(done) done();
+    }
+  },80);
+}
+
+// 문장 구간이 없으면 N초씩 잘라 쓴다
+function egUnits(){
+  if(eg.segs.length) return eg.segs;
+  var d=egDur(), out=[], c=eg.say.chunk;
+  for(var t=0;t<d-0.5;t+=c) out.push([t,Math.min(d,t+c),'']);
+  return out;
+}
+
+function egRenderMode(){
+  var M=[['say','🗣 따라 말하기'],['rep','🔁 반복'],['cut','✂ 문장 나누기'],['watch','👀 그냥 보기']];
+  document.getElementById('egModes').innerHTML=M.map(function(m){
+    return '<button class="'+(eg.mode===m[0]?'on':'')+'" onclick="egSetMode(\''+m[0]+'\')">'+m[1]+'</button>';
+  }).join('');
+  var p=document.getElementById('egPanel'), h='';
+  if(eg.mode==='say'){
+    h+='<div class="eg-opts">';
+    if(!eg.segs.length){
+      h+='<span>문장을 안 나눈 영상 — <span class="eg-chip">'+[3,4,5,6].map(function(c){
+        return '<button class="'+(eg.say.chunk===c?'on':'')+'" onclick="eg.say.chunk='+c+';egRenderMode()">'+c+'초</button>'; }).join('')
+        +'</span>마다 멈춰요</span>';
+    }
+    h+=egTog('twice','두 번 듣고 말하기')+egTog('back','내 목소리 들려주기')+egTog('auto','자동으로 다음 문장');
+    if(egSR()) h+=egTog('stt','받아쓰기(베타)');
+    h+='</div><button class="eg-go" onclick="egSayStart()">▶ 시작! (선택한 문장부터)</button>';
+    h+=egSegList(false);
+    h+='<div class="eg-note">문장이 끝나면 영상이 멈추고 🎤 가 떠요. 아이가 말을 멈추면 알아서 넘어가고, 아이 목소리를 다시 들려준 뒤 칭찬해요. '
+      +'5초 동안 조용하면 한 번 더 들려주고, 그래도 조용하면 다음 문장으로 넘어가요(억지로 시키지 않게).<br>'
+      +'처음엔 마이크 허용을 물어봐요. 녹음은 폰 안에서만 쓰고 어디에도 저장하지 않아요.</div>';
+  } else if(eg.mode==='rep'){
+    h+='<div class="eg-opts"><span>횟수 <span class="eg-chip">'+[[2,'2'],[3,'3'],[5,'5'],[99,'계속']].map(function(c){
+        return '<button class="'+(eg.rep.n===c[0]?'on':'')+'" onclick="eg.rep.n='+c[0]+';egRenderMode()">'+c[1]+'</button>'; }).join('')+'</span></span>'
+      +'<span>속도 <span class="eg-chip">'+[0.5,0.75,1].map(function(c){
+        return '<button class="'+(eg.rep.speed===c?'on':'')+'" onclick="eg.rep.speed='+c+';egRenderMode()">'+c+'</button>'; }).join('')+'</span></span></div>';
+    h+='<button class="eg-go" id="egRepBtn" onclick="egRepToggle()">'+(eg.rep.on?'■ 멈춤':'🔁 선택한 문장 반복')+'</button>';
+    h+=egSegList(false);
+    if(!eg.segs.length) h+='<div class="eg-note">문장을 나누기 전이라 '+eg.say.chunk+'초씩 잘라서 보여줘요.</div>';
+  } else if(eg.mode==='cut'){
+    h+='<button class="eg-cut" onclick="egCutHere()">✂ 여기까지 한 문장</button>';
+    h+='<div class="eg-opts"><button class="eg-btn" style="background:#475569" onclick="egCutStartHere()">⏮ 여기서부터 시작(인트로 건너뛰기)</button>'
+      +'<button class="eg-btn" onclick="egSaveSegs()">💾 저장</button>'
+      +(eg.segs.length?'<button class="eg-btn" style="background:#e5484d" onclick="egCutReset()">모두 지우기</button>':'')+'</div>';
+    h+=egSegList(true);
+    h+='<div class="eg-note">영상을 틀어 두고, 한 문장이 끝날 때마다 <b>✂</b> 를 누르세요. 칸에 영어 문장을 적어두면 따라 말하기 때 크게 보여주고 🐢 로 천천히 읽어줘요(안 적어도 돼요).<br>'
+      +'끝을 조금 늦게 눌렀으면 −/+ 로 0.3초씩 고치고 ▶ 로 확인하세요.</div>';
+  } else {
+    h+='<div class="eg-note">자막(영어)이 켜진 채로 틀어요. 따라 말하기 전에 한 번 그냥 보여주면 좋아요.</div>';
+  }
+  p.innerHTML=h;
+  egHiSeg();
+}
+function egSetMode(m){ egStop(); eg.mode=m; egRenderMode(); }
+function egTog(k,label){
+  return '<label><input type="checkbox" '+(eg.say[k]?'checked':'')+' onchange="eg.say.'+k+'=this.checked"> '+label+'</label>';
+}
+
+function egSegList(edit){
+  var u=eg.segs.length?eg.segs:(edit?[]:egUnits());
+  if(!u.length) return edit?'<div class="eg-note">아직 나눈 문장이 없어요.</div>':'';
+  var h='<div class="eg-segs" id="egSegs">';
+  u.forEach(function(q,i){
+    h+='<div class="eg-seg'+(i===eg.sel?' on':'')+'" id="egSeg'+i+'"><span class="tm">'+(i+1)+'. '+egFmt(q[0])+'</span>';
+    if(edit){
+      h+='<input value="'+egA(q[2])+'" placeholder="(영어 문장, 선택)" oninput="eg.segs['+i+'][2]=this.value;eg.dirty=true">'
+        +'<button onclick="egPrev('+i+')">▶</button><button onclick="egNudge('+i+',-0.3)">−</button>'
+        +'<button onclick="egNudge('+i+',0.3)">+</button><button onclick="egSegDel('+i+')">✕</button>';
+    } else {
+      h+='<span class="tx" onclick="egPick('+i+')">'+(q[2]?esc(q[2]):'<span style="color:#a6adba">('+(q[1]-q[0]).toFixed(1)+'초)</span>')+'</span>'
+        +(q[2]&&window.speechSynthesis?'<button onclick="egSpeak('+i+')">🐢</button>':'')
+        +'<button onclick="egPick('+i+');egPrev('+i+')">▶</button>';
+    }
+    h+='</div>';
+  });
+  return h+'</div>';
+}
+function egHiSeg(){
+  var box=document.getElementById('egSegs'); if(!box) return;
+  Array.prototype.forEach.call(box.children,function(el,i){ el.classList.toggle('on',i===eg.sel); });
+  var el=document.getElementById('egSeg'+eg.sel);
+  if(el) box.scrollTop=el.offsetTop-box.offsetTop-60;
+}
+function egPick(i){ eg.sel=i; egHiSeg(); }
+function egPrev(i){ var u=eg.segs.length?eg.segs:egUnits(); var q=u[i]; if(q){ eg.rate=1; egPlaySeg(q[0],q[1]); } }
+function egSpeak(i){
+  var u=eg.segs.length?eg.segs:egUnits(), q=u[i]; if(!q||!q[2]||!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  var s=new SpeechSynthesisUtterance(q[2]); s.lang='en-US'; s.rate=0.7; speechSynthesis.speak(s);
+}
+
+/* ✂ 문장 나누기 */
+function egCutStartHere(){ eg.cutStart=Math.round(egT()*10)/10; alert(egFmt(eg.cutStart)+' 부터 첫 문장으로 칠게요'); }
+function egCutHere(){
+  if(!eg.player) return;
+  var t=Math.round(egT()*10)/10;
+  var last=eg.segs.length?eg.segs[eg.segs.length-1][1]:eg.cutStart;
+  var s=(last<t)?last:Math.max(0,t-3);
+  if(t-s<0.4) return;
+  eg.segs.push([s,t,'']); eg.sel=eg.segs.length-1; eg.dirty=true;
+  egRenderMode();
+}
+function egNudge(i,d){ var q=eg.segs[i]; q[1]=Math.max(q[0]+0.3,Math.round((q[1]+d)*10)/10); if(eg.segs[i+1]) eg.segs[i+1][0]=q[1]; eg.dirty=true; egRenderMode(); }
+function egSegDel(i){ eg.segs.splice(i,1); eg.dirty=true; eg.sel=Math.max(0,Math.min(eg.sel,eg.segs.length-1)); egRenderMode(); }
+function egCutReset(){ if(!confirm('나눈 문장을 모두 지울까요? (저장해야 반영돼요)')) return; eg.segs=[]; eg.cutStart=0; eg.dirty=true; egRenderMode(); }
+function egSaveSegs(){
+  var id=eg.vid.id; busy(true);
+  google.script.run.withSuccessHandler(function(d){
+    busy(false); if(d&&d.error){ alert(d.error); return; }
+    eg.data=d; eg.dirty=false; var v=egFind(id); if(v) eg.vid=v;
+    alert('저장했어요 — 문장 '+eg.segs.length+'개'); egRenderMode();
+  }).withFailureHandler(function(e){ busy(false); alert('저장 실패: '+e.message); }).eng_saveSegs(id,eg.segs);
+}
+
+/* 🔁 반복 */
+function egRepToggle(){
+  if(eg.rep.on){ egStop(); egRenderMode(); return; }
+  egUnlock();
+  var u=egUnits(), q=u[eg.sel]; if(!q){ alert('영상이 아직 준비 안 됐어요. 잠깐 뒤에 다시 눌러 주세요.'); return; }
+  eg.rep.on=true; eg.rep.left=eg.rep.n; eg.rate=eg.rep.speed;
+  document.getElementById('egRepBtn').textContent='■ 멈춤';
+  (function loop(){
+    if(!eg.rep.on) return;
+    egPlaySeg(q[0],q[1],function(){
+      eg.rep.left--;
+      if(eg.rep.n===99||eg.rep.left>0) eg.rep.timer=setTimeout(loop,800);
+      else { eg.rep.on=false; eg.rate=1; var b=document.getElementById('egRepBtn'); if(b) b.textContent='🔁 선택한 문장 반복'; }
+    });
+  })();
+}
+
+/* 🗣 따라 말하기 */
+function egSR(){ return window.SpeechRecognition||window.webkitSpeechRecognition; }
+function egAudio(){ if(!eg.audio){ eg.audio=new Audio(); eg.audio.setAttribute('playsinline',''); } return eg.audio; }
+function egSilentWav(){
+  var n=800, b=new ArrayBuffer(44+n), v=new DataView(b);
+  var s=function(o,t){ for(var i=0;i<t.length;i++) v.setUint8(o+i,t.charCodeAt(i)); };
+  s(0,'RIFF'); v.setUint32(4,36+n,true); s(8,'WAVE'); s(12,'fmt '); v.setUint32(16,16,true);
+  v.setUint16(20,1,true); v.setUint16(22,1,true); v.setUint32(24,8000,true); v.setUint32(28,8000,true);
+  v.setUint16(32,1,true); v.setUint16(34,8,true); s(36,'data'); v.setUint32(40,n,true);
+  for(var i=0;i<n;i++) v.setUint8(44+i,128);
+  return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));
+}
+// 아이폰은 첫 소리를 손가락 터치 안에서 내야 뒤에 이어지는 소리도 허락된다
+function egUnlock(){
+  var AC=window.AudioContext||window.webkitAudioContext;
+  if(AC){ if(!eg.ctx) eg.ctx=new AC(); if(eg.ctx.state==='suspended') eg.ctx.resume(); }
+  var a=egAudio(); if(!a.src){ a.src=egSilentWav(); a.play().catch(function(){}); }
+  if(window.speechSynthesis){ var u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u); }
+}
+function egWake(on){
+  try{
+    if(on&&navigator.wakeLock&&!eg.wake) navigator.wakeLock.request('screen').then(function(w){ eg.wake=w; }).catch(function(){});
+    if(!on&&eg.wake){ eg.wake.release(); eg.wake=null; }
+  }catch(e){}
+}
+
+function egOv(){
+  var o=document.getElementById('egTurn');
+  if(!o){
+    o=document.createElement('div'); o.className='eg-turn'; o.id='egTurn';
+    o.innerHTML='<div class="eg-burst" id="egBurst"></div><div class="msg" id="egMsg"></div><div class="sen" id="egSen"></div>'
+      +'<div class="eg-mic" id="egMic">🎤</div><div class="heard" id="egHeard"></div>'
+      +'<div class="row"><button class="again" onclick="egAgain()">🔁 한 번 더</button>'
+      +'<button class="next" id="egNextBtn" onclick="egNext()">다 했어 ➡</button></div>'
+      +'<div class="row"><button class="quit" onclick="egSayStop()">그만하기</button></div>';
+    document.body.appendChild(o);
+  }
+  return o;
+}
+function egOvSet(o){
+  if(o.msg!=null) document.getElementById('egMsg').textContent=o.msg;
+  if(o.sen!=null) document.getElementById('egSen').textContent=o.sen;
+  if(o.heard!=null) document.getElementById('egHeard').innerHTML=o.heard;
+  if(o.burst!=null){ var b=document.getElementById('egBurst'); b.textContent=o.burst; b.classList.remove('go'); void b.offsetWidth; if(o.burst) b.classList.add('go'); }
+  if(o.mic!=null){ var m=document.getElementById('egMic'); m.className='eg-mic'+(o.mic?' '+o.mic:''); m.textContent=o.mic==='play'?'🔊':(o.mic==='done'?'👍':'🎤'); m.style.boxShadow=''; }
+}
+function egOvHide(){ var o=document.getElementById('egTurn'); if(o) o.classList.remove('on'); }
+
+function egSayStart(){
+  egUnlock();
+  var u=egUnits();
+  if(!u.length){ alert('영상이 아직 준비 안 됐어요. 잠깐 뒤에 다시 눌러 주세요.'); return; }
+  eg.units=u; eg.say.running=true; eg.say.idx=Math.min(eg.sel,u.length-1); eg.quietTries=0; eg.rate=1;
+  egWake(true); egSayStep();
+}
+function egSayStep(){
+  if(!eg.say.running) return;
+  var u=eg.units[eg.say.idx];
+  if(!u){ egSayStop(true); return; }
+  eg.sel=eg.say.idx; egHiSeg(); egOvHide(); eg.phase='listen';
+  var play=function(k){
+    egPlaySeg(u[0],u[1],function(){
+      if(!eg.say.running) return;
+      if(k>1) eg.autoTimer=setTimeout(function(){ play(k-1); },600);
+      else egTurnMic(u);
+    });
+  };
+  play(eg.say.twice?2:1);
+}
+function egTurnMic(u){
+  egOv().classList.add('on');
+  egOvSet({msg:'따라 해 봐! 🎤', sen:u[2]||'', heard:'', burst:'', mic:''});
+  document.getElementById('egNextBtn').textContent='다 했어 ➡';
+  if(eg.say.stt&&egSR()) egListenSTT(u); else egRecord(u);
+}
+
+function egRecord(u){
+  eg.phase='rec';
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||!window.MediaRecorder){
+    eg.phase='noRec'; egOvSet({heard:'이 기기에선 녹음이 안 돼요 — 따라 말하면 「다 했어」를 눌러 주세요'}); return;
+  }
+  navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}}).then(function(st){
+    if(!eg.say.running||eg.phase!=='rec'){ st.getTracks().forEach(function(t){ t.stop(); }); return; }
+    eg.mic=st;
+    var mt=['audio/mp4','audio/webm;codecs=opus','audio/webm'].filter(function(m){
+      return MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(m); })[0];
+    var rec=new MediaRecorder(st, mt?{mimeType:mt}:undefined), chunks=[];
+    eg.rec=rec;
+    rec.ondataavailable=function(e){ if(e.data&&e.data.size) chunks.push(e.data); };
+    rec.onstop=function(){
+      var spoke=eg.heardVoice;
+      egMicOff();
+      egAfterRec(u, new Blob(chunks,{type:rec.mimeType||mt||'audio/mp4'}), spoke);
+    };
+    rec.start();
+    egVad(st);
+    eg.recTimer=setTimeout(egRecStop,8000);
+  }).catch(function(){
+    eg.phase='noRec'; egOvSet({heard:'마이크를 쓸 수 없어요 — 허용해 주세요. 따라 말하면 「다 했어」를 눌러 주세요'});
+  });
+}
+// 목소리 크기로 마이크를 부풀리고, 말이 끝나면(1.3초 조용) 알아서 멈춘다
+function egVad(st){
+  eg.heardVoice=false;
+  if(!eg.ctx) return;
+  if(eg.ctx.state==='suspended') eg.ctx.resume();
+  var src=eg.ctx.createMediaStreamSource(st), an=eg.ctx.createAnalyser(); an.fftSize=512; src.connect(an);
+  eg.vadSrc=src;
+  var buf=new Uint8Array(an.fftSize), quiet=0, t0=Date.now(), mic=document.getElementById('egMic');
+  clearInterval(eg.vadTimer);
+  eg.vadTimer=setInterval(function(){
+    an.getByteTimeDomainData(buf);
+    var sum=0; for(var i=0;i<buf.length;i++){ var v=(buf[i]-128)/128; sum+=v*v; }
+    var rms=Math.sqrt(sum/buf.length), now=Date.now();
+    if(mic) mic.style.boxShadow='0 0 0 '+Math.min(70,Math.round(rms*500))+'px rgba(239,68,68,.35)';
+    if(rms>0.035&&now-t0>300){ eg.heardVoice=true; quiet=0; }
+    else if(eg.heardVoice){ if(!quiet) quiet=now; else if(now-quiet>1300) egRecStop(); }
+    else if(now-t0>5000) egRecStop();
+  },60);
+}
+function egRecStop(){
+  clearTimeout(eg.recTimer); clearInterval(eg.vadTimer);
+  if(eg.sr){ try{ eg.sr.stop(); }catch(e){} }
+  if(eg.rec&&eg.rec.state!=='inactive'){ try{ eg.rec.stop(); }catch(e){} }
+}
+function egMicOff(){
+  clearInterval(eg.vadTimer);
+  if(eg.vadSrc){ try{ eg.vadSrc.disconnect(); }catch(e){} eg.vadSrc=null; }
+  if(eg.mic){ eg.mic.getTracks().forEach(function(t){ t.stop(); }); eg.mic=null; }   // 마이크를 꺼야 영상 소리가 다시 커진다
+  eg.rec=null;
+}
+
+function egAfterRec(u, blob, spoke){
+  if(!eg.say.running||eg.phase!=='rec') return;
+  if(!spoke){
+    eg.phase='quiet'; eg.quietTries++;
+    egOvSet({msg:eg.quietTries>=2?'다음 문장으로 가 볼까?':'다시 들어볼까? 👂', heard:'', mic:''});
+    eg.autoTimer=setTimeout(function(){
+      if(eg.phase!=='quiet'||!eg.say.running) return;
+      if(eg.quietTries>=2) egAdvance(); else egSayStep();
+    },1400);
+    return;
+  }
+  eg.quietTries=0;
+  if(eg.say.back&&blob&&blob.size){
+    eg.phase='play'; egOvSet({msg:'내 목소리! 🔊', mic:'play'});
+    var a=egAudio(), url=URL.createObjectURL(blob);
+    a.onended=function(){ URL.revokeObjectURL(url); if(eg.phase==='play') egDone(); };
+    a.src=url; a.play().catch(function(){ if(eg.phase==='play') egDone(); });
+  } else egDone();
+}
+
+var EG_PRAISE=['Great job!','Wonderful!','Good job!','Yay!','Awesome!','Super!','Well done!'];
+var EG_BURST=['🌟🌟🌟','🎉⭐🎉','👏👏👏','🦄✨🌈','🐷💕🐷','🚀⭐🚀'];
+function egDone(){
+  if(!eg.say.running) return;
+  eg.phase='praise';
+  egOvSet({msg:'잘했어!', mic:'done', burst:EG_BURST[Math.floor(Math.random()*EG_BURST.length)]});
+  if(window.speechSynthesis){
+    speechSynthesis.cancel();
+    var s=new SpeechSynthesisUtterance(EG_PRAISE[Math.floor(Math.random()*EG_PRAISE.length)]);
+    s.lang='en-US'; s.rate=0.95; s.pitch=1.3; speechSynthesis.speak(s);
+  }
+  eg.say.said++;
+  google.script.run.withSuccessHandler(function(r){ if(eg.data&&r) eg.data.log=r.log; }).eng_logSay(1);
+  document.getElementById('egNextBtn').textContent='다음 ➡';
+  if(eg.say.auto) eg.autoTimer=setTimeout(function(){ if(eg.phase==='praise') egAdvance(); },2400);
+}
+function egAdvance(){ clearTimeout(eg.autoTimer); eg.say.idx++; eg.quietTries=0; egSayStep(); }
+function egCancelTurn(){
+  clearTimeout(eg.autoTimer); clearTimeout(eg.recTimer); clearInterval(eg.timer);
+  var was=eg.phase; eg.phase='cancel';
+  if(was==='rec') egRecStop();
+  egMicOff();
+  if(eg.audio){ try{ eg.audio.pause(); }catch(e){} }
+  if(window.speechSynthesis) speechSynthesis.cancel();
+}
+function egNext(){
+  if(eg.phase==='rec'){ egRecStop(); return; }     // 말이 끝났다 → 들려주기로
+  if(eg.phase==='noRec'){ egDone(); return; }
+  egCancelTurn(); egAdvance();
+}
+function egAgain(){ egCancelTurn(); eg.quietTries=0; egSayStep(); }
+
+function egSayStop(finished){
+  var said=eg.say.said, was=eg.say.running;
+  eg.say.running=false; egCancelTurn(); egOvHide(); egWake(false);
+  try{ if(eg.player&&eg.player.pauseVideo) eg.player.pauseVideo(); }catch(e){}
+  if(was&&said){ alert((finished?'끝까지 했어요! ':'')+'이번에 '+said+'문장 따라 말했어요 🌟'); }
+  eg.say.said=0;
+}
+
+// 받아쓰기(베타) — 아이 발음은 잘 못 알아들어서 기본은 끔
+function egListenSTT(u){
+  eg.phase='rec';
+  var SR=egSR(), r=new SR(), got='', ended=false;
+  r.lang='en-US'; r.interimResults=true; r.maxAlternatives=1; eg.sr=r;
+  r.onresult=function(e){
+    got=''; for(var i=0;i<e.results.length;i++) got+=e.results[i][0].transcript+' ';
+    egOvSet({heard:egMatch(got,u[2])});
+  };
+  r.onerror=function(){};
+  r.onend=function(){
+    if(ended) return; ended=true; eg.sr=null; clearTimeout(eg.recTimer);
+    if(eg.phase!=='rec'||!eg.say.running) return;
+    if(got.trim()) egDone(); else egAfterRec(u,null,false);
+  };
+  try{ r.start(); }catch(e){ egRecord(u); return; }
+  eg.recTimer=setTimeout(function(){ try{ r.stop(); }catch(e){} },6000);
+}
+function egMatch(got,target){
+  var want={}; (target||'').toLowerCase().replace(/[^a-z' ]/g,' ').split(/\s+/).forEach(function(w){ if(w) want[w]=1; });
+  return got.trim().split(/\s+/).map(function(w){
+    var k=w.toLowerCase().replace(/[^a-z']/g,'');
+    return want[k]?'<b>'+esc(w)+'</b>':esc(w);
+  }).join(' ');
+}
+
+// 탭을 떠나거나 모드를 바꿀 때 전부 멈춘다
+function egStop(){
+  if(eg.say.running) egSayStop();
+  egCancelTurn(); egOvHide();
+  eg.rep.on=false; clearTimeout(eg.rep.timer); eg.rate=1;
+  try{ if(eg.player&&eg.player.pauseVideo) eg.player.pauseVideo(); }catch(e){}
+}
+</script>
+</body></html>
