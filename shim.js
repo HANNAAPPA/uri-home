@@ -31,7 +31,8 @@
     document.addEventListener(ev, function(){ lastTouch = Date.now(); }, true);
   });
 
-  function call(fn, args){
+  function call(fn, args, tries){
+    tries = tries || 0;
     return fetch(API, {
       method: 'POST', redirect: 'follow', credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -39,6 +40,10 @@
     }).then(function(r){
       if (!r.ok) throw new Error('서버 응답 ' + r.status);
       return r.json();
+    }).catch(function(e){
+      // 구글이 가끔 404·5xx 를 한 번 돌려준다(배포 직후·부하). 읽기만 두 번까지 다시 시도한다 — 쓰기는 중복 위험이라 안 한다
+      if (READ[fn] && tries < 2) return new Promise(function(res){ setTimeout(res, 1200 * (tries + 1)); }).then(function(){ return call(fn, args, tries + 1); });
+      throw e;
     }).then(function(j){
       if (!j.ok) {
         if (j.err === 'auth') { gate(); throw new Error('등록되지 않은 기기예요'); }

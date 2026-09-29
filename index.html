@@ -728,15 +728,41 @@ function loadHome(){
   document.getElementById("pane-home").innerHTML='<div class="state">불러오는 중…</div>';
   google.script.run.withSuccessHandler(function(d){
     document.getElementById("today").textContent=d.today+" 기준";
+    homeCache[homeY+'-'+homeM]=d;
     renderHome(d);loaded.home=true;busy(false);
   }).withFailureHandler(function(e){
     document.getElementById("pane-home").innerHTML='<div class="state">조회 실패: '+e.message+
       '<br><br>최초 실행 시 캘린더 권한 승인이 필요할 수 있어요.</div>';busy(false);
   }).getHomeData(homeY,homeM);
 }
+// 월 이동은 캘린더 칸만 바꾼다(오른쪽 일정·기념일·메모는 그대로). 본 달은 기억해 뒀다가 바로 보여준다
+var homeCache={};
 function moveMonth(delta){
   homeM+=delta;if(homeM<1){homeM=12;homeY--;}if(homeM>12){homeM=1;homeY++;}
-  loadHome();
+  var y=homeY,m=homeM,k=y+'-'+m, cal=document.querySelector('.cal');
+  if(!cal||!document.getElementById('daypanel')){ loadHome(); return; }
+  if(homeCache[k]) applyCal(homeCache[k]); else cal.style.opacity='.45';
+  google.script.run.withSuccessHandler(function(d){
+    homeCache[k]=d;
+    if(y===homeY&&m===homeM) applyCal(d);
+  }).withFailureHandler(function(e){
+    var c=document.querySelector('.cal'); if(c) c.style.opacity='';
+    if(y===homeY&&m===homeM&&!homeCache[k]) toast2('이 달 일정을 못 불러왔어요: '+e.message);
+  }).getHomeData(y,m);
+}
+function toast2(msg){
+  var t=document.getElementById('calToast');
+  if(!t){ t=document.createElement('div'); t.id='calToast';
+    t.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#1f2733;color:#fff;padding:10px 14px;border-radius:12px;font-size:13px;z-index:999;max-width:90vw'; document.body.appendChild(t); }
+  t.textContent=msg; t.style.display='block'; clearTimeout(t._h); t._h=setTimeout(function(){ t.style.display='none'; },4000);
+}
+function applyCal(d){
+  homeEvents={};
+  d.events.forEach(function(e){(homeEvents[e.date]=homeEvents[e.date]||[]).push(e);});
+  var cal=document.querySelector('.cal'); if(!cal) return;
+  cal.outerHTML=calHtml(d.today);
+  var pre=homeY+'-'+p2(homeM)+'-';
+  showDay(selDate&&selDate.indexOf(pre)===0?selDate:(d.today.indexOf(pre)===0?d.today:pre+'01'));
 }
 function renderHome(d){
   homeEvents={};
