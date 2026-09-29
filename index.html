@@ -608,8 +608,6 @@ details.eg-st:not([open]) .chev::after{content:'펼치기 ▾'}
 .eg-st-body{padding:0 14px 14px}
 .eg-guide{margin:2px 0 10px;font-size:12.5px}
 .eg-guide summary{cursor:pointer;color:#2563eb;font-weight:600}
-.eg-sug{margin-top:8px}
-.eg-sug .eg-vrow{border:1px dashed #94a3b8}
 .eg-vhead{max-width:820px;margin:10px auto 0;display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap}
 .eg-vhead .tt{flex:1;min-width:200px;font-weight:700;font-size:14px;overflow-wrap:anywhere}
 .eg-auto{max-width:820px;margin:10px auto 0;background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:10px;padding:9px 12px;font-size:13px;line-height:1.5}
@@ -2669,7 +2667,6 @@ function egScriptHtml(v){
 
 var egOpenScript={};   // videoId → 지도안 펼침 여부
 var egOpenStage={};    // 단계 → 펼침 여부(안 건드렸으면 「지금 단계」만 펼침)
-var egSug={};          // 단계 → {cands, round, busy, err}
 function egToggleScript(id){ egOpenScript[id]=!egOpenScript[id]; egRoadmap(true); }
 function egAssignStage(id, sel){
   var st=sel.value===''?null:Number(sel.value);
@@ -2700,43 +2697,25 @@ function egCurStage(){
   for(var s=0;s<=5;s++){ if(vs.some(function(v){ return v.stage===s&&!egLearned(v); })) return s; }
   return 0;
 }
-function egVideoRow(v, sug){
-  var open=!!egOpenScript[v.id], dn=egLearned(v);
+function egVideoRow(v){
+  var open=!!egOpenScript[v.id], dn=egLearned(v), id=egA(v.id);
   var h='<div class="eg-vrow'+(dn?' done':'')+'">'
     +'<img loading="lazy" src="https://i.ytimg.com/vi/'+egA(v.yt)+'/default.jpg" alt="" '
-    +'onerror="this.style.visibility=\'hidden\'" onclick="'+(sug?'':'egOpen(\''+egA(v.id)+'\')')+'">'
-    +'<div class="eg-vrow-t"><div class="tt"'+(sug?'':' onclick="egOpen(\''+egA(v.id)+'\')"')+'>'+esc(v.title)+'</div>'
+    +'onerror="this.style.visibility=\'hidden\'" onclick="egOpen(\''+id+'\')">'
+    +'<div class="eg-vrow-t"><div class="tt" onclick="egOpen(\''+id+'\')">'+esc(v.title)+'</div>'
     +egMeta(v)
     +(v.note?'<div class="eg-vnote">💬 '+esc(v.note)+'</div>':'')
-    +(sug&&v.ch?'<div class="eg-vnote">'+esc(v.ch)+(v.manual?' · 사람이 올린 자막':' · 자동 자막')+'</div>':'')
-    +'<div class="eg-vrow-acts">';
-  if(sug){
-    h+='<button class="go" onclick="egSugAdd('+v.stage+',\''+egA(v.yt)+'\')">＋ 이 단계에 담기</button>';
-  } else {
-    h+='<button class="go" onclick="egOpen(\''+egA(v.id)+'\')">'+(dn?'↻ 다시 하기':'▶ 시작')+'</button>'
-      +'<button onclick="egToggleScript(\''+egA(v.id)+'\')">'+(open?'▾ 지도안 닫기':'📋 지도안')+'</button>'
-      +'<button onclick="egToggleDone(\''+egA(v.id)+'\','+(dn?'false':'true')+')">'+(dn?'학습 취소':'✓ 학습함')+'</button>'
-      +'<select onchange="egAssignStage(\''+egA(v.id)+'\',this)" onclick="event.stopPropagation()">'
-      +[0,1,2,3,4,5].map(function(n){ var si=egStageInfo(n);
-          return '<option value="'+n+'"'+(v.stage===n?' selected':'')+'>'+si.emoji+' '+n+'단계</option>'; }).join('')
-      +'<option value=""'+(v.stage==null?' selected':'')+'>단계 없음</option></select>';
-  }
-  h+='</div></div></div>';
-  if(open&&!sug) h+=egScriptHtml(v);
+    +'<div class="eg-vrow-acts">'
+    +'<button class="go" onclick="egOpen(\''+id+'\')">'+(dn?'↻ 다시 하기':'▶ 시작')+'</button>'
+    +'<button onclick="egToggleScript(\''+id+'\')">'+(open?'▾ 지도안 닫기':'📋 지도안')+'</button>'
+    +'<button onclick="egToggleDone(\''+id+'\','+(dn?'false':'true')+')">'+(dn?'학습 취소':'✓ 학습함')+'</button>'
+    +'<select onchange="egAssignStage(\''+id+'\',this)" onclick="event.stopPropagation()">'
+    +[0,1,2,3,4,5].map(function(n){ var si=egStageInfo(n);
+        return '<option value="'+n+'"'+(v.stage===n?' selected':'')+'>'+si.emoji+' '+n+'단계</option>'; }).join('')
+    +'<option value=""'+(v.stage==null?' selected':'')+'>단계 없음</option></select>'
+    +'</div></div></div>';
+  if(open) h+=egScriptHtml(v);
   return h;
-}
-function egSugFind(stage){
-  var s=egSug[stage]; if(!s) return;
-  s.busy=true; egRoadmap(true);
-  google.script.run.withSuccessHandler(function(r){
-    s.busy=false; s.round=r.round; s.q=r.q; s.cands=r.cands.map(function(c){ c.stage=stage; c.id='c'+c.yt; return c; });
-    s.err=s.cands.length?'':'맞는 영상을 못 찾았어요. 다시 눌러 보세요'; egRoadmap(true);
-  }).withFailureHandler(function(e){ s.busy=false; s.err='찾기 실패: '+e.message; egRoadmap(true); }).eng_suggest(stage, s.round||0);
-}
-function egSugAdd(stage, yt){
-  egAddTo('https://www.youtube.com/watch?v='+yt, stage, function(){
-    var s=egSug[stage]; if(s) s.cands=s.cands.filter(function(c){ return c.yt!==yt; });
-  });
 }
 function egStageJump(n){
   egOpenStage[n]=true; egRoadmap(true);
@@ -2763,7 +2742,6 @@ function egRoadmap(keepScroll){
   EG_ROADMAP.forEach(function(s){
     var mine=egFind2(s.stage), dn=mine.filter(egLearned).length;
     var open=egOpenStage[s.stage]!==undefined?egOpenStage[s.stage]:(s.stage===cur);
-    var sg=egSug[s.stage]||(egSug[s.stage]={round:0,cands:[]});
     h+='<details class="eg-st'+(s.stage===cur?' cur':'')+'" id="egSt'+s.stage+'"'+(open?' open':'')+' ontoggle="egOpenStage['+s.stage+']=this.open">'
       +'<summary><span class="eg-rd-emoji">'+s.emoji+'</span><div><div class="eg-rd-name">'+s.stage+'단계 · '+esc(s.name)
       +(s.stage===cur?' <span style="color:#2563eb;font-size:12px">← 지금 여기</span>':'')+'</div>'
@@ -2774,12 +2752,7 @@ function egRoadmap(keepScroll){
       +'<details class="eg-guide"><summary>부모가 할 일 '+s.points.length+'가지</summary><ul class="eg-rd-pts">'
       +s.points.map(function(p){ return '<li>'+esc(p)+'</li>'; }).join('')+'</ul></details>';
     if(mine.length) h+='<div class="eg-vrows">'+mine.map(function(v){ return egVideoRow(v); }).join('')+'</div>';
-    else h+='<div class="eg-rd-empty">아직 이 단계에 담은 영상이 없어요. 아래 <b>🔎 영상 더 찾기</b>를 눌러 보세요.</div>';
-    h+='<button class="eg-btn" style="background:#0f766e" onclick="egSugFind('+s.stage+')"'+(sg.busy?' disabled':'')+'>'
-      +(sg.busy?'찾는 중… (10~20초)':'🔎 이 단계 영상 더 찾기')+'</button>';
-    if(sg.err) h+='<div class="eg-note">'+esc(sg.err)+'</div>';
-    if(sg.cands.length) h+='<div class="eg-sug"><div class="eg-note" style="margin:6px 0">「'+esc(sg.q||'')+'」 검색 · 자막이 있는 것만 · 담으면 문장이 자동으로 나뉘어요</div><div class="eg-vrows">'
-      +sg.cands.map(function(c){ return egVideoRow(c,true); }).join('')+'</div></div>';
+    else h+='<div class="eg-rd-empty">아직 이 단계에 담은 영상이 없어요. 아래에 링크를 붙여 넣거나 Claude 에게 이 단계 영상을 찾아 달라고 하세요.</div>';
     h+='<div class="eg-rd-add" style="margin-top:10px"><input id="egrAdd'+s.stage+'" placeholder="직접 찾은 링크 붙여넣기" autocomplete="off">'
       +'<button onclick="egRoadmapAdd('+s.stage+')">이 단계에 담기</button></div></div></details>';
   });
@@ -2821,14 +2794,14 @@ function egAutoChop(){
   google.script.run.withSuccessHandler(function(d){
     if(!eg.vid||eg.vid.id!==id) return;
     box=document.getElementById('egAutoBox');
-    if(d&&d.error){ eg.mode='cut'; if(box) box.innerHTML='<div class="eg-auto" style="background:#fff7ed;border-color:#fed7aa;color:#9a3412">'+esc(d.error)+'</div>'; egRenderMode(); return; }
+    if(d&&d.error){ eg.mode='say'; if(box) box.innerHTML='<div class="eg-auto" style="background:#fff7ed;border-color:#fed7aa;color:#9a3412">'+esc(d.error)+'</div>'; egRenderMode(); return; }
     eg.data=d; var v=egFind(id); if(v){ eg.vid=v; eg.segs=(v.segs||[]).map(function(q){ return q.slice(); }); }
     eg.sel=0; eg.dirty=false; eg.mode='say'; egOpenHead();
     if(box) box.innerHTML='<div class="eg-auto">🪄 자막으로 문장 <b>'+eg.segs.length+'개</b>를 자동으로 나눠 저장했어요. 어색한 곳만 <b>✂ 문장 나누기</b> 탭에서 고치세요.</div>';
     egRenderMode();
   }).withFailureHandler(function(e){
-    box=document.getElementById('egAutoBox'); eg.mode='cut';
-    if(box) box.innerHTML='<div class="eg-auto" style="background:#fff7ed;border-color:#fed7aa;color:#9a3412">자동 나누기 실패: '+esc(e.message)+' — ✂ 로 손으로 나눠 주세요</div>';
+    box=document.getElementById('egAutoBox'); eg.mode='say';
+    if(box) box.innerHTML='<div class="eg-auto" style="background:#fff7ed;border-color:#fed7aa;color:#9a3412">자동 나누기 실패: '+esc(e.message)+' — 그동안은 몇 초마다 멈추는 방식으로 쓸 수 있어요</div>';
     egRenderMode();
   }).eng_autoSegs(id);
 }
