@@ -642,6 +642,26 @@ details.eg-st:not([open]) .chev::after{content:'펼치기 ▾'}
 .eg-burst{font-size:60px;min-height:72px;letter-spacing:6px}
 @keyframes egPop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.25);opacity:1}100%{transform:scale(1)}}
 .eg-burst.go{animation:egPop .55s ease-out}
+.eg-stat{position:fixed;inset:0;z-index:500;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;padding:14px}
+.eg-stat.on{display:flex}
+.eg-stat-box{background:var(--card);border-radius:16px;padding:16px;width:min(440px,100%);max-height:88vh;overflow:auto}
+.eg-stat-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.eg-stat-hd b{flex:1;text-align:center;font-size:16px}
+.eg-stat-hd button{border:1px solid var(--line);background:#fff;border-radius:8px;width:34px;height:34px;font-size:16px;cursor:pointer}
+.eg-stat-hd button:disabled{opacity:.3}
+.eg-stat-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center;font-size:11px;color:var(--muted);margin-bottom:10px}
+.eg-stat-sum b{display:block;font-size:20px;color:var(--txt)}
+.eg-stat-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:12px}
+.eg-stat-cal span{text-align:center;font-size:11px;color:var(--muted)}
+.eg-stat-cal b{aspect-ratio:1;border-radius:8px;background:#f1f5f9;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:400;line-height:1.1}
+.eg-stat-cal b u{text-decoration:none;font-size:10px;color:#94a3b8}
+.eg-stat-cal b em{font-style:normal;font-size:13px;font-weight:800;color:#166534}
+.eg-stat-cal b.s1{background:#dcfce7}
+.eg-stat-cal b.s2{background:#86efac}
+.eg-stat-cal b.t{outline:2px solid #2563eb}
+.eg-stat-sec{font-size:13px;font-weight:800;margin:10px 0 4px}
+.eg-stat-row{display:flex;gap:8px;font-size:12.5px;padding:4px 0;border-bottom:1px solid #f1f5f9}
+.eg-stat-row span{flex:1;min-width:0;overflow-wrap:anywhere}
 </style></head>
 <body>
 <header>
@@ -2480,11 +2500,12 @@ function egMeta(v){
 
 function renderEngHome(){
   egStop(); eg.vid=null;
+  if(eg.queue){ eg.queue=null; eg.say.limit=eg.prevLimit||10; }
   if(eg.player){ try{ eg.player.destroy(); }catch(e){} eg.player=null; }
   var d=eg.data||{}, log=d.log||{}, logv=d.logv||{}, today=d.today||'';
   var ymd=function(i){ var dt=new Date(today+'T00:00'); dt.setDate(dt.getDate()-i); return dt.getFullYear()+'-'+p2(dt.getMonth()+1)+'-'+p2(dt.getDate()); };
   var yk=ymd(1);
-  var h='<div class="eg-top"><div class="eg-star">오늘 <b>'+(log[today]||0)+'</b>문장 🌟 <span style="font-size:13px;color:#64748b">· 어제 '+(log[yk]||0)+'문장</span></div><div class="eg-week">';
+  var h='<div class="eg-top"><div class="eg-star" style="cursor:pointer" onclick="egStats()" title="월별 현황 보기">오늘 <b>'+(log[today]||0)+'</b>문장 🌟 <span style="font-size:13px;color:#64748b">· 어제 '+(log[yk]||0)+'문장</span><div style="font-size:11px;color:#2563eb;margin-top:2px">📊 눌러서 월별 현황</div></div><div class="eg-week" style="cursor:pointer" onclick="egStats()">';
   for(var i=6;i>=0;i--){
     var k=ymd(i), n=log[k]||0, dt=new Date(k+'T00:00');
     h+='<span><i>'+(n>=10?'🌟':(n>0?'⭐':'·'))+'</i>'+DOW[dt.getDay()]+'<em style="font-style:normal;font-size:10px">'+(n||'')+'</em></span>';
@@ -2492,6 +2513,8 @@ function renderEngHome(){
   h+='</div></div>';
   var ys=logv[yk]||{}, yl=Object.keys(ys).map(function(id){ var v=egFind(id); return v?'<span>어제 · '+esc(v.title.split('|')[0].trim())+' '+ys[id]+'문장</span>':''; }).join('');
   if(yl) h+='<div class="eg-day">'+yl+'</div>';
+  var nTodo=(d.videos||[]).filter(function(v){ return !egLearned(v); }).length;
+  if(nTodo) h+='<button class="eg-roadmap-btn" style="border-color:#bbf7d0;background:#f0fdf4;color:#166534" onclick="egPlaylist()">▶ 재생목록으로 이어서 하기 — 안 한 영상 '+nTodo+'개를 쉬운 순서로</button>';
   h+='<button class="eg-roadmap-btn" onclick="egRoadmap()">🗺 바이링구얼 로드맵 — 단계별로 다음에 볼 영상 고르기</button>';
   h+='<div class="eg-add"><input id="egUrl" placeholder="유튜브 주소 붙여넣기 (슈퍼심플송·페파피그…)" autocomplete="off">'
     +'<button onclick="egAdd()">추가</button></div>';
@@ -2519,6 +2542,64 @@ function renderEngHome(){
   h+='<div class="eg-note">🗣 <b>따라 말하기</b> — 한 문장씩 멈추면 아이가 따라 말하고, 방금 말한 걸 <b>아이 목소리로 다시 들려줘요</b>. '
     +'문장 나누기(챱)는 자막으로 <b>자동</b>이에요 — 틀린 곳만 ✂ 에서 고치세요.</div>';
   document.getElementById('pane-eng').innerHTML=h;
+}
+
+/* 📊 월별 학습 현황 팝업 — 홈의 오늘/주간 별을 누르면 열린다 */
+function egStats(ym){
+  var d=eg.data||{}, today=d.today||'', log=d.log||{};
+  ym=ym||today.slice(0,7);
+  var y=Number(ym.slice(0,4)), m=Number(ym.slice(5,7));
+  var mm=(d.logm||{})[ym];
+  if(!mm&&!egStatsBusy){
+    egStatsBusy=true;
+    google.script.run.withSuccessHandler(function(r){
+      egStatsBusy=false; d.logm=d.logm||{}; d.logm[ym]=(r&&r.m)||{}; egStats(ym);
+    }).withFailureHandler(function(){ egStatsBusy=false; d.logm=d.logm||{}; d.logm[ym]={}; egStats(ym); }).eng_month(ym);
+    mm={};
+  }
+  mm=mm||{};
+  var first=new Date(y,m-1,1).getDay(), days=new Date(y,m,0).getDate(), total=0, active=0, best=0, cells='';
+  for(var i=0;i<first;i++) cells+='<i></i>';
+  for(var dd=1;dd<=days;dd++){
+    var k=ym+'-'+p2(dd), n=log[k]||0; total+=n; if(n) active++; if(n>best) best=n;
+    cells+='<b class="'+(n>=10?'s2':(n>0?'s1':''))+(k===today?' t':'')+'"><u>'+dd+'</u>'+(n?'<em>'+n+'</em>':'')+'</b>';
+  }
+  var vids=Object.keys(mm).map(function(id){ var v=egFind(id); return v?[v.title.split('|')[0].trim(),mm[id]]:null; })
+    .filter(Boolean).sort(function(a,b){ return b[1]-a[1]; });
+  var fin=((d.videos)||[]).filter(function(v){ var p=egProg(v.id); return p.done&&(p.d||'').slice(0,7)===ym; });
+  var isNow=ym===today.slice(0,7), pm=new Date(y,m-2,1), nm=new Date(y,m,1);
+  var pk=pm.getFullYear()+'-'+p2(pm.getMonth()+1), nk=nm.getFullYear()+'-'+p2(nm.getMonth()+1);
+  var h='<div class="eg-stat-box" onclick="event.stopPropagation()">'
+    +'<div class="eg-stat-hd"><button onclick="egStats(\''+pk+'\')">‹</button><b>'+y+'년 '+m+'월</b>'
+    +'<button '+(isNow?'disabled':'onclick="egStats(\''+nk+'\')"')+'>›</button><button class="x" onclick="egStatsClose()">✕</button></div>'
+    +'<div class="eg-stat-sum"><div><b>'+total+'</b>문장</div><div><b>'+active+'</b>일 함</div><div><b>'+(active?Math.round(total/active):0)+'</b>하루 평균</div><div><b>'+best+'</b>최고 하루</div></div>'
+    +'<div class="eg-stat-cal"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>'+cells+'</div>'
+    +'<div class="eg-stat-sec">🎬 이 달에 한 영상</div>'
+    +(vids.length?vids.map(function(x){ return '<div class="eg-stat-row"><span>'+esc(x[0])+'</span><b>'+x[1]+'문장</b></div>'; }).join(''):'<div class="eg-note">영상별 기록은 이번 개편 이후부터 쌓여요.</div>')
+    +'<div class="eg-stat-sec">✅ 이 달에 끝낸 영상 '+fin.length+'개</div>'
+    +fin.map(function(v){ return '<div class="eg-stat-row"><span>'+esc(v.title.split('|')[0].trim())+'</span><b>'+esc((egProg(v.id).d||'').slice(5))+'</b></div>'; }).join('')
+    +'<div class="eg-note">전체 학습: '+((d.videos||[]).filter(egLearned).length)+' / '+((d.videos||[]).length)+'개 영상 완료 · 문장 기록은 최근 120일까지 남아요</div></div>';
+  var o=document.getElementById('egStat');
+  if(!o){ o=document.createElement('div'); o.id='egStat'; o.className='eg-stat'; o.onclick=egStatsClose; document.body.appendChild(o); }
+  o.innerHTML=h; o.classList.add('on');
+}
+var egStatsBusy=false;
+function egStatsClose(){ var o=document.getElementById('egStat'); if(o) o.classList.remove('on'); }
+
+/* ▶ 재생목록 — 안 한 영상을 쉬운 단계 순으로 이어서. 영상 첫 광고는 직접 건너뛰고 ▶ 시작 */
+function egPlaylist(){
+  var q=egSortVids((eg.data&&eg.data.videos)||[]).filter(function(v){ return !egLearned(v); }).map(function(v){ return v.id; });
+  if(!q.length){ alert('안 한 영상이 없어요 🎉 로드맵에서 새 영상을 담아 주세요'); return; }
+  eg.queue=q; eg.prevLimit=eg.say.limit; eg.say.limit=999;   // 재생목록은 영상 하나를 끝까지
+  egOpen(q[0]);
+}
+function egQueueNext(){
+  if(!eg.queue) return;
+  var cur=eg.vid&&eg.vid.id, i=eg.queue.indexOf(cur), nx=null;
+  for(var j=i+1;j<eg.queue.length;j++){ var v=egFind(eg.queue[j]); if(v&&!egLearned(v)){ nx=v.id; break; } }
+  if(!nx){ alert('재생목록 끝! 오늘도 수고했어요 🌟'); renderEngHome(); return; }
+  if(eg.dirty&&!confirm('나눈 문장을 저장하지 않았어요. 그냥 넘어갈까요?')) return;
+  egOpen(nx);
 }
 
 function egAdd(){
@@ -2785,7 +2866,8 @@ function egOpenHead(){
   eg.vid=v;
   b.innerHTML='<div class="tt">'+esc(v.title)+egMeta(v)+'</div>'
     +'<button class="eg-btn" style="background:'+(egLearned(v)?'#6b7280':'#16a34a')+'" onclick="egToggleDone(\''+egA(v.id)+'\','+(egLearned(v)?'false':'true')+')">'
-    +(egLearned(v)?'학습 취소':'✓ 학습함으로 표시')+'</button>';
+    +(egLearned(v)?'학습 취소':'✓ 학습함으로 표시')+'</button>'
+    +(eg.queue?'<button class="eg-btn" style="background:#0f766e" onclick="egQueueNext()">⏭ 다음 영상 ('+(eg.queue.indexOf(v.id)+1)+'/'+eg.queue.length+')</button>':'');
 }
 // 자막으로 문장을 자동으로 나눠 바로 저장한다. quiet=true 면 실패해도 조용히 손 나누기 화면으로
 function egAutoChop(){
@@ -3155,7 +3237,7 @@ function egDone(){
   }
   eg.say.said++;
   google.script.run.withSuccessHandler(function(r){
-    if(eg.data&&r){ eg.data.log=r.log; eg.data.logv=r.logv; eg.data.prog=r.prog; if(eg.vid) egOpenHead(); }
+    if(eg.data&&r){ eg.data.log=r.log; eg.data.logv=r.logv; eg.data.prog=r.prog; eg.data.logm=r.logm; if(eg.vid) egOpenHead(); }
   }).eng_logSay(1, eg.vid.id, eg.say.idx, eg.units.length);
   document.getElementById('egNextBtn').textContent='다음 ➡';
   if(eg.say.auto) eg.autoTimer=setTimeout(function(){ if(eg.phase==='praise') egAdvance(); },2400);
@@ -3180,6 +3262,11 @@ function egSayStop(finished, roundEnd){
   var said=eg.say.said, was=eg.say.running;
   eg.say.running=false; egCancelTurn(); egOvHide(); egWake(false);
   try{ if(eg.player&&eg.player.pauseVideo) eg.player.pauseVideo(); }catch(e){}
+  if(was&&finished&&eg.queue){
+    var bx=document.getElementById('egAutoBox');
+    if(bx) bx.innerHTML='<div class="eg-auto">✅ 끝까지 했어요('+said+'문장)! 다음 영상으로 넘어가요 — 광고가 나오면 직접 건너뛰고 ▶ 시작</div>';
+    eg.say.said=0; setTimeout(egQueueNext,1800); return;
+  }
   if(was&&said){
     var lr=eg.vid&&egLearned(eg.vid);
     alert((finished?'끝까지 했어요! ':(roundEnd?'오늘 분량 끝! ':''))+'이번에 '+said+'문장 따라 말했어요 🌟'
