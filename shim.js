@@ -117,16 +117,27 @@
         + 'justify-content:center;padding:24px;font-family:system-ui,sans-serif;text-align:center';
       g.innerHTML = '<div style="max-width:360px"><div style="font-size:52px">🔒</div>'
         + '<h2 style="margin:10px 0">등록된 기기만 열 수 있어요</h2>'
-        + '<p style="color:#6b7484;line-height:1.6;font-size:14px">받은 <b>등록 링크</b>를 이 폰에서 한 번 열거나, 아래에 붙여넣으세요.</p>'
-        + '<input id="hkLink" placeholder="등록 링크 붙여넣기" style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px">'
-        + '<button id="hkGo" style="width:100%;margin-top:10px;padding:12px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:16px;font-weight:700">등록</button></div>';
+        + '<p style="color:#6b7484;line-height:1.6;font-size:14px">우리 집 <b>등록 코드</b>를 입력하세요. 한 번만 하면 이 기기는 계속 열려요.</p>'
+        + '<input id="hkCode" type="password" inputmode="numeric" autocomplete="off" maxlength="32" placeholder="등록 코드" style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font-size:18px;text-align:center;letter-spacing:4px">'
+        + '<div id="hkMsg" style="min-height:20px;margin-top:8px;color:#dc2626;font-size:13px"></div>'
+        + '<button id="hkGo" style="width:100%;margin-top:6px;padding:12px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:16px;font-weight:700">등록</button></div>';
       document.body.appendChild(g);
-      document.getElementById('hkGo').onclick = function(){
-        var v = document.getElementById('hkLink').value.match(/k=([A-Za-z0-9_-]{40,64})/);
-        if (!v) { alert('링크가 올바르지 않아요'); return; }
-        try { localStorage.setItem(KEY, v[1]); } catch (e) {}
-        location.reload();
+      var go = document.getElementById('hkGo'), inp = document.getElementById('hkCode'), msg = document.getElementById('hkMsg');
+      var submit = function(){
+        var code = inp.value.trim(); if (!code) return;
+        go.disabled = true; go.textContent = '확인 중…'; msg.textContent = '';
+        fetch(API, { method: 'POST', redirect: 'follow', credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'pair', args: [code] }) })
+          .then(function(r){ if (!r.ok) throw new Error('서버 응답 ' + r.status); return r.json(); })
+          .then(function(j){
+            if (j.ok && j.v && j.v.key) { try { localStorage.setItem(KEY, j.v.key); } catch (e) {} location.reload(); return; }
+            go.disabled = false; go.textContent = '등록'; inp.value = '';
+            msg.textContent = j.err === 'locked' ? '시도가 너무 많아요. ' + j.wait + '분 뒤에 다시 해 주세요'
+              : j.err === 'code' ? '코드가 달라요 (남은 ' + j.left + '번)' : '잠시 뒤에 다시 해 주세요';
+          }).catch(function(e){ go.disabled = false; go.textContent = '등록'; msg.textContent = '연결 실패: ' + e.message; });
       };
+      go.onclick = submit;
+      inp.onkeydown = function(ev){ if (ev.key === 'Enter') submit(); };
     };
     if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
   }
