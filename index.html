@@ -662,6 +662,32 @@ details.eg-st:not([open]) .chev::after{content:'펼치기 ▾'}
 .eg-stat-sec{font-size:13px;font-weight:800;margin:10px 0 4px}
 .eg-stat-row{display:flex;gap:8px;font-size:12.5px;padding:4px 0;border-bottom:1px solid #f1f5f9}
 .eg-stat-row span{flex:1;min-width:0;overflow-wrap:anywhere}
+.re-avail{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.re-avail h3{margin:0 0 8px;font-size:16px}
+.re-avail h3 .sub{font-size:12px;font-weight:400;color:var(--muted)}
+.re-avail .row{display:flex;gap:10px;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:13.5px}
+.re-avail .row span{flex:1;min-width:0;overflow-wrap:anywhere}
+.re-avail .row small{display:block;color:var(--muted);font-size:11.5px}
+.re-avail .row.sub{padding-left:14px;color:#64748b}
+.re-avail .row.tot{border-bottom:0;font-size:16px;font-weight:800;background:#eff6ff;border-radius:10px;padding:10px}
+.re-sim{margin-top:14px;padding-top:12px;border-top:2px solid #e2e8f0}
+.re-sim .sl{margin:10px 0}
+.re-sim .sl label{display:block;font-size:13px;margin-bottom:4px}
+.re-sim .sl label b{font-size:18px;color:#2563eb;margin-left:6px}
+.re-sim .sl input[type=range]{width:100%;height:32px}
+.re-sim .mut{color:var(--muted);font-size:11.5px}
+.re-sim .opts{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13px;align-items:center;margin:8px 0}
+.re-sim .opts label.yk{background:#fef3c7;border-radius:8px;padding:4px 8px;font-weight:700}
+.re-sim .out{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:8px}
+.re-sim .out .b{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}
+.re-sim .out .b.ok{border-color:#86efac;background:#f0fdf4}
+.re-sim .out .b.bad{border-color:#fca5a5;background:#fef2f2}
+.re-sim .out .b.yk{border-color:#fcd34d;background:#fffbeb}
+.re-sim .out .b.big{grid-column:1/-1;background:#f8fafc}
+.re-sim .out .lab{font-size:12px;color:var(--muted)}
+.re-sim .out .val{font-size:20px;font-weight:800}
+.re-sim .out .sm{font-size:11.5px;color:#64748b;margin-top:2px;line-height:1.4}
+.re-sim .note{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:10px}
 </style></head>
 <body>
 <header>
@@ -974,8 +1000,8 @@ function renderEstate(d){
     return '<div class="aptcard"><h2>'+a.name+' <span class="retag '+a.tag+'">'+tagLab+'</span>'+delBtn+'</h2>'+
       '<div class="addr">'+(a.addr||'')+'</div>'+body+'</div>';
   }).join("");
-  document.getElementById("pane-estate").innerHTML = errHtml + cards + reAddFormHtml() + reLoanHtml(d) + reMapHtml();
-  reLoanBind(d);
+  document.getElementById("pane-estate").innerHTML = errHtml + reAvailHtml(d) + cards + reAddFormHtml() + reMapHtml();
+  reAvailBind(d);
   reMapInit(d);
 }
 
@@ -1009,50 +1035,141 @@ function reWatchDel(id){
     .re_watchDel(id);
 }
 
-/* ── 대출 계산기 ── */
-function reLatestPrice_(a){
-  return a.deals && a.deals.length ? a.deals[0].amount*10000 : 0;
+/* ── 💰 가용자산 · 얼마까지 살 수 있을까 (금액은 만원) ──
+   가용자산 = (금호 최근 실거래가 − 세입자 보증금) + 이펜하우스 우리 몫 + 포트폴리오.
+   대출은 서울 규제지역 기준: LTV 40% · 절대한도 · 스트레스 DSR 40%. 신용대출(영끌)은 한도 안에서 모자란 만큼만 쓴다. */
+var reS = null;   // 시뮬레이터 상태(슬라이더 값)
+function reMan(n){ n=Math.round(n||0); return n.toLocaleString('ko-KR'); }
+function reEok(n){ return (Math.round(n/100)/100).toFixed(2).replace(/\.?0+$/,'')+'억'; }
+function reF(rate, yrs){ var r=rate/100/12, n=yrs*12; return r/(1-Math.pow(1+r,-n)); }   // 월 상환계수(원리금균등)
+function reAbsCap(P){ return P<=150000?60000:(P<=250000?40000:20000); }
+function reCost(P){   // 취득세·중개보수·이사 등 부대비용 추정
+  var acq=P<=60000?1.1:(P<=90000?(P/10000*2/3-3)*1.1:3.3);
+  var br=(P<=90000?0.4:(P<=120000?0.5:(P<=150000?0.6:0.7)))*1.1;
+  return P*(acq+br+0.3)/100;
 }
-function reLoanHtml(d){
-  var watch = d.apts.filter(function(a){ return a.tag==='watch' && a.deals.length; });
-  var defPrice = watch.length ? Math.max.apply(null, watch.map(reLatestPrice_)) : 900000000;
-  var price = Number(reGetLS_('re_price', defPrice));
-  var ltv = Number(reGetLS_('re_ltv', 40));
-  var extra = Number(reGetLS_('re_extra', 0));
-  return '<div class="re-loan"><h3>🧮 대출·가용자산 계산기</h3>'+
-    '<div class="grid">'+
-      '<div><label>매매가(원)</label><input type="number" id="rePrice" value="'+price+'" step="1000000"></div>'+
-      '<div><label>예상 LTV(%)</label><input type="number" id="reLtv" value="'+ltv+'" step="1"></div>'+
-      '<div><label>기타 가용자산(원, 직접입력)</label><input type="number" id="reExtra" value="'+extra+'" step="1000000"></div>'+
-    '</div>'+
-    '<div class="note">가용자산 기본값 = 예수금 '+reWon(d.liquid.cash)+'원 + RP '+reWon(d.liquid.rp)+'원'+
-      (d.liquid.cashUsdKrw?(' + 달러예수금 환산 '+reWon(d.liquid.cashUsdKrw)+'원'):'')+
-      ' (주식 평가금액 제외). 보유 주택이 있어 규제지역 2주택자는 LTV가 크게 제한되거나 대출이 막힐 수 있으니 '+
-      'LTV%는 예시값이며 <b>실제 한도는 은행·주택도시보증공사(HUG)에 반드시 확인</b>하세요.</div>'+
-    '<div class="out" id="reOut"></div>'+
-  '</div>';
+function reInc(pl){ return pl.incomeH + pl.incomeW*(reS.wr/100); }   // 은행이 인정하는 부부 합산 연소득
+function reDsrLoad(pl, m, X, yrs){   // 연 원리금(스트레스 금리 기준)
+  var a=m*12*reF(pl.mortRate+pl.stress, yrs);
+  var b=X*12*reF(pl.creditRate+(X>20000?pl.stress:0), 5);
+  return a+b;
 }
-function reLoanCalc(){
-  var price = Number(document.getElementById("rePrice").value)||0;
-  var ltv = Number(document.getElementById("reLtv").value)||0;
-  var extra = Number(document.getElementById("reExtra").value)||0;
-  reSetLS_('re_price', price); reSetLS_('re_ltv', ltv); reSetLS_('re_extra', extra);
-  var liquid = ((reData&&reData.liquid&&reData.liquid.total)||0) + extra;
-  var loan = Math.round(price * ltv/100);
-  var needCash = price - loan;
-  var ok = liquid >= needCash;
-  var gap = liquid - needCash;
-  document.getElementById("reOut").innerHTML=
-    '<div class="b"><div class="lab">대출 가능액(추정)</div><div class="val">'+reWon(loan)+'원</div></div>'+
-    '<div class="b"><div class="lab">필요 현금(매매가−대출)</div><div class="val">'+reWon(needCash)+'원</div></div>'+
-    '<div class="b '+(ok?'ok':'bad')+'"><div class="lab">'+(ok?'가용자산 대비 여유':'가용자산 대비 부족')+'</div>'+
-      '<div class="val">'+(gap>=0?'+':'')+reWon(gap)+'원</div></div>';
+// 집값 P, 투입 자산 C, 영끌 여부로 대출을 짜 본다. 주담대를 먼저 쓰고 모자란 만큼만 신용대출로 채운다
+function reFit(pl, P, C, yk, yrs){
+  var need=P+reCost(P)-C, r={P:P, need:need, cost:reCost(P), m:0, X:0, ok:true, why:[]};
+  if(need<=0){ r.extra=-need; return r; }
+  var inc=reInc(pl), lim=pl.dsr/100*inc;
+  var mmax=Math.min(P*pl.ltv/100, reAbsCap(P));
+  var xcap=yk?Math.min(inc, 20000):0;
+  for(var X=0; X<=xcap+1; X+=500){
+    var x=Math.min(X,xcap), m=need-x;
+    if(m<0){ m=0; x=need; }
+    if(m<=mmax+0.5 && reDsrLoad(pl,m,x,yrs)<=lim){ r.m=m; r.X=x; return r; }
+    if(x>=xcap) break;
+  }
+  // 못 맞춤 — 이유를 밝히려고 주담대만 최대로 쓴 경우를 기록
+  var m2=Math.max(0,need-xcap);
+  r.ok=false; r.m=Math.min(m2, mmax); r.X=Math.min(xcap, need-r.m);
+  if(m2>mmax+0.5) r.why.push('LTV·절대한도(주담대 최대 '+reEok(mmax)+') 초과');
+  if(reDsrLoad(pl,m2,Math.min(xcap,need-m2),yrs)>lim) r.why.push('DSR '+pl.dsr+'% 초과');
+  if(!r.why.length) r.why.push('자금 부족');
+  return r;
 }
-function reLoanBind(d){
-  ['rePrice','reLtv','reExtra'].forEach(function(id){
-    document.getElementById(id).addEventListener('input', reLoanCalc);
+function reAvailHtml(d){
+  var pl=d.plan; if(!pl||!pl.p) return '';
+  var p=pl.p, own=pl.own, saved=null;
+  try{ saved=JSON.parse(reGetLS_('re_sim','null')); }catch(e){}
+  reS=saved||{ price:(own?own.price:90000), stock:true, yk:false, yrs:30, wr:p.wifeRate, ownP:0, use:-1, hp:0 };
+  if(!(reS.wr>=0)) reS.wr=p.wifeRate;
+  var h='<div class="re-avail"><h3>💰 가용자산 <span class="sub">(우리 돈 · 고정 + 포트폴리오)</span></h3><div id="reAvRows"></div>'
+    +'<div class="re-sim" id="reSim">'
+    +'<h3>🎚 얼마까지 살 수 있을까</h3>'
+    +'<div class="sl"><label>사려는 집값 <b id="reHpV"></b></label><input type="range" id="reHp" min="20000" max="200000" step="1000"></div>'
+    +'<div class="sl"><label>쓸 내 돈 <b id="reUseV"></b> <span class="mut" id="reUseMax"></span></label><input type="range" id="reUse" min="0" max="100000" step="500"></div>'
+    +'<div class="opts"><label><input type="checkbox" id="reStock"> 주식 평가금액 포함</label>'
+    +'<label class="yk"><input type="checkbox" id="reYk"> 🔥 영끌(신용대출 포함)</label>'
+    +'<label>만기 <select id="reYrs"><option value="20">20년</option><option value="30">30년</option><option value="40">40년</option></select></label>'
+    +'<label>아내 소득 반영 <input type="number" id="reWr" min="0" max="100" step="10" style="width:60px">%</label></div>'
+    +'<div class="out" id="reSimOut"></div>'
+    +'<div class="note" id="reSimNote"></div></div></div>';
+  return h;
+}
+function reAvailBind(d){
+  var pl=d.plan; if(!pl||!pl.p||!reS) return;
+  var st=function(){ reAvailCalc(d); };
+  ['reHp','reUse','reStock','reYk','reYrs','reWr'].forEach(function(id){
+    var el=document.getElementById(id);
+    el.addEventListener(el.type==='checkbox'||el.tagName==='SELECT'?'change':'input', function(){
+      if(id==='reHp') reS.hp=1;
+      if(id==='reUse') reS.use=Number(el.value);
+      if(id==='reStock') reS.stock=el.checked;
+      if(id==='reYk') reS.yk=el.checked;
+      if(id==='reYrs') reS.yrs=Number(el.value);
+      if(id==='reWr') reS.wr=Math.max(0,Math.min(100,Number(el.value)||0));
+      if(id==='reHp') reS.price=Number(el.value);
+      st();
+    });
   });
-  reLoanCalc();
+  document.getElementById('reHp').value=reS.price;
+  document.getElementById('reStock').checked=reS.stock;
+  document.getElementById('reYk').checked=reS.yk;
+  document.getElementById('reYrs').value=reS.yrs;
+  document.getElementById('reWr').value=reS.wr;
+  reAvailCalc(d);
+}
+function reAvailCalc(d){
+  var pl=d.plan, p=pl.p, own=pl.own, pf=pl.pf;
+  var ownPrice=reS.ownP>0?reS.ownP:(own?own.price:0);
+  var ownNet=Math.max(0, ownPrice-p.deposit);
+  var pfv=pf.net-(reS.stock?0:pf.stock);
+  var total=ownNet+p.jeonseOurs+pfv;
+  var rows=
+    '<div class="row"><span>🏢 금호(1차) <small>'+(own?('최근 실거래 '+own.date+' · '+own.area+'㎡ '+own.floor+'층'):'최근 실거래 없음')+'</small></span><b>'+reMan(ownPrice)+'</b></div>'
+   +'<div class="row sub"><span>− 세입자 보증금</span><b>−'+reMan(p.deposit)+'</b></div>'
+   +'<div class="row sub"><span>= 보유 부동산 순자산 <small>(양도세·중개비 제외)</small></span><b>'+reMan(ownNet)+'</b></div>'
+   +'<div class="row"><span>🏠 신정이펜하우스4단지 <small>전세 보증금 '+reMan(p.jeonseTotal)+' 중 우리 몫</small></span><b>'+reMan(p.jeonseOurs)+'</b></div>'
+   +'<div class="row"><span>📈 포트폴리오 <small>주식 '+reMan(pf.stock)+' · 예수금 '+reMan(pf.cash)+' · RP '+reMan(pf.rp)+(reS.stock?'':' (주식 제외)')+'</small></span><b>'+reMan(pfv)+'</b></div>'
+   +'<div class="row tot"><span>가용자산 합계</span><b>'+reMan(total)+'만원 <small>('+reEok(total)+')</small></b></div>';
+  document.getElementById('reAvRows').innerHTML=rows;
+
+  // 슬라이더 범위
+  var useEl=document.getElementById('reUse'), hpEl=document.getElementById('reHp');
+  useEl.max=Math.max(500, Math.ceil(total/500)*500);
+  var C=reS.use<0?Math.floor(total/500)*500:Math.min(reS.use,total);   // 건드리기 전엔 가용자산 전액
+  useEl.value=C;
+  var P=Number(hpEl.value);
+  document.getElementById('reHpV').textContent=reEok(P);
+  document.getElementById('reUseV').textContent=reEok(C);
+  document.getElementById('reUseMax').textContent='(가용자산 '+reEok(total)+' 중)';
+  reSetLS_('re_sim', JSON.stringify(reS));
+
+  var f=reFit(p,P,C,reS.yk,reS.yrs);
+  var inc=reInc(p), net=(p.incomeH+p.incomeW)*0.85/12;   // 월 실수령(세후 약 85%) 추정
+  var mPay=f.m*reF(p.mortRate,reS.yrs), xPay=f.X*p.creditRate/100/12, pay=mPay+xPay;
+  // 최대 집값 / 최소 내 돈
+  var best=0, bestFit=null;
+  for(var q=10000;q<=300000;q+=500){ var g=reFit(p,q,C,reS.yk,reS.yrs); if(g.ok){ best=q; bestFit=g; } }
+  var minC=0;
+  for(var c=0;c<=total+500;c+=500){ var g2=reFit(p,P,c,reS.yk,reS.yrs); if(g2.ok){ minC=c; break; } if(c>total) minC=-1; }
+  var bestPay=bestFit?(bestFit.m*reF(p.mortRate,reS.yrs)+bestFit.X*p.creditRate/100/12):0;
+  var cred=Math.min(inc,20000);
+  var out=
+    '<div class="b '+(f.ok?'ok':'bad')+'"><div class="lab">'+reEok(P)+' 집 — '+(f.ok?'가능 ✅':'불가 ❌')+'</div>'
+      +'<div class="val">월 '+reMan(pay)+'만원</div>'
+      +'<div class="sm">'+(f.ok?'월 실수령 약 '+reMan(net)+'만원의 '+Math.round(pay/net*100)+'%':esc(f.why.join(' · ')))+'</div></div>'
+   +'<div class="b"><div class="lab">주담대</div><div class="val">'+reEok(f.m)+'</div><div class="sm">월 '+reMan(mPay)+'만 · 금리 '+p.mortRate+'% · '+reS.yrs+'년</div></div>'
+   +(reS.yk?'<div class="b yk"><div class="lab">신용대출(영끌)</div><div class="val">'+reEok(f.X)+'</div><div class="sm">월 이자 '+reMan(xPay)+'만 · 금리 '+p.creditRate+'% · 한도 약 '+reEok(cred)+'</div></div>':'')
+   +'<div class="b"><div class="lab">부대비용(추정)</div><div class="val">'+reEok(f.cost)+'</div><div class="sm">취득세·중개보수 등</div></div>'
+   +'<div class="b big"><div class="lab">지금 내 돈 '+reEok(C)+'로 살 수 있는 최대 집값</div><div class="val">'+(best?reEok(best):'—')+'</div>'
+      +'<div class="sm">'+(best?('월 '+reMan(bestPay)+'만원 · 주담대 '+reEok(bestFit.m)+(reS.yk&&bestFit.X?' + 신용 '+reEok(bestFit.X):'')):'조건에 맞는 집값이 없어요')+'</div></div>'
+   +'<div class="b big"><div class="lab">'+reEok(P)+' 집을 사려면 최소 내 돈</div><div class="val">'+(minC>=0?reEok(minC):'가용자산으론 부족')+'</div>'
+      +'<div class="sm">'+(minC>=0?('그때 주담대 '+reEok(reFit(p,P,minC,reS.yk,reS.yrs).m)):'')+'</div></div>';
+  document.getElementById('reSimOut').innerHTML=out;
+  document.getElementById('reSimNote').innerHTML=
+    '인정 연소득 약 <b>'+reMan(inc)+'만원</b>(남편 정교사 17호봉 '+reMan(p.incomeH)+' + 아내 기간제 18호봉 '+reMan(p.incomeW)+'×'+reS.wr+'%) · DSR '+p.dsr+'% = 연 원리금 '+reMan(p.dsr/100*inc)+'만원, 스트레스 가산 +'+p.stress+'%p.<br>'
+   +'서울 전역 규제지역(LTV '+p.ltv+'%, 주담대 15억↓ 6억 · 15~25억 4억 · 25억↑ 2억, 무주택자만) — <b>금호를 팔아 무주택이 된 뒤</b> 대출받는 걸 전제로 했어요. '
+   +'신용대출은 인정소득 100%·부부 각 1억(총 2억) 안에서 모자란 만큼만 쓰고, 주택 구입 자금 용도 제한·1년 내 회수 같은 사후 규제는 은행마다 달라요. '
+   +'금리는 '+p.asOf+' 5대 은행 평균(주담대 '+p.mortRate+'%·신용 '+p.creditRate+'%)이고 <b>참고용 추정</b>이라 실제 한도는 은행 사전심사로 꼭 확인하세요.';
 }
 
 /* ── 지도 ── */
