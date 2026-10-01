@@ -2033,7 +2033,7 @@ function openPfEdit(){
     +'<button class="addr" onclick="addRpRow()">+ RP 추가</button>'
     +'<div class="pf-note">· 국내: 6자리 종목코드(예 005930). · 해외: 티커(예 AAPL, TSLA) — 뒤 접미사는 자동으로 찾습니다.<br>'
     +'· 평단가는 국내=원, 해외=달러 기준. · <b>해외 매입환율</b>(살 때 원/달러)을 넣으면 환차손익이 분리 계산됩니다(비우면 현재환율 적용=환차 0).<br>'
-    +'· <b>➕ 적립(추가매수)</b>: 종목의 ➕ 버튼에 이번 매수 수량·단가·환율을 넣으면 평단·매입환율이 합쳐지고(가중평균) <b>매수대금이 예수금에서 자동으로 빠집니다</b>. 해외는 달러 예수금/원화(자동환전) 중 결제한 쪽을 고르세요.<br>'
+    +'· <b>➕ 적립(추가매수)</b>: 종목의 ➕ 버튼에 이번 매수 수량·단가·환율을 넣으면 평단·매입환율이 합쳐지고(가중평균) <b>매수대금이 예수금에서 자동으로 빠집니다</b>. 해외는 달러 예수금/원화(자동환전) 중 결제한 쪽을 고르세요. 수량·평단을 직접 고쳐도 저장할 때 늘어난 매수대금을 예수금에서 뺄지 묻습니다(해외는 달러 예수금).<br>'
     +'· <b>처음 사는 종목</b>도 「+ 종목 추가」로 코드·이름만 넣고 수량·단가는 ➕ 로 넣어야 예수금이 맞습니다. 표에 수량·평단을 직접 타이핑하면 예수금이 안 빠집니다.<br>'
     +'· <b>➕환전</b>: 원→달러 환전할 때마다 금액·환율을 넣으면 달러현금 평균환율이 갱신되고 현금 환차손익이 표시됩니다.</div>'
     +'<button class="pf-editbtn" style="margin-top:10px" onclick="loadPf()">← 취소</button>'
@@ -2073,6 +2073,8 @@ function addPfRow(h){
     +'<td><input class="e-fx" type="number" value="'+(h.buyFx||'')+'" placeholder="'+(isUs?'예 1350':'—')+'"'+(isUs?'':' disabled')+'></td>'
     +'<td style="white-space:nowrap"><button class="buyb" title="추가매수(적립)" onclick="pfBuyRow(this)">➕</button>'
       +'<button class="delx" onclick="pfDelRow(this)">×</button></td>';
+  // 열 때의 수량·평단 — 저장 때 늘어난 매수대금을 예수금에서 빼는 기준
+  tr.dataset.q0=+h.qty||0; tr.dataset.a0=+h.avg||0;
   tb.appendChild(tr);
 }
 function pfMkChange(sel){
@@ -2133,6 +2135,8 @@ function pfBuyApply(btn){
     var nbfx = (bfx>0 && (wOld+wNew)>0) ? (wOld*bfx + wNew*f)/(wOld+wNew) : f;
     tr.querySelector('.e-fx').value=Math.round(nbfx);
   }
+  // 예수금은 위에서 이미 뺐다 — 저장 때 또 빼지 않게 기준을 옮긴다
+  tr.dataset.q0=nq; tr.dataset.a0=tr.querySelector('.e-av').value;
   sub.remove();
 }
 // 달러현금 환전 — 평균 환전환율 가중평균 갱신
@@ -2156,7 +2160,32 @@ function pfFxApply(){
   box.innerHTML='';
 }
 function escAttr(s){ return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+// 편집표에서 수량·평단을 직접 고친 매수(불타기·물타기)도 예수금에서 뺀다.
+// 매수대금 = 새 수량×새 평단 − 옛 수량×옛 평단 (가중평균이라 정확히 이번 매수액)
+function pfUnpaidBuys(){
+  var krw=0, usd=0, lines=[];
+  document.querySelectorAll("#pfEditBody tr").forEach(function(tr){
+    if(!tr.querySelector('.e-cd')||!tr.querySelector('.e-cd').value.trim()) return;
+    var q=+tr.querySelector('.e-qt').value||0, a=+tr.querySelector('.e-av').value||0;
+    var q0=+tr.dataset.q0||0, a0=+tr.dataset.a0||0;
+    if(!(q>q0)) return;
+    var amt=q*a-q0*a0;
+    if(!(amt>0)) return;
+    var isUs=tr.querySelector('.e-mk').value==='US';
+    var nm=tr.querySelector('.e-nm').value.trim()||tr.querySelector('.e-cd').value.trim();
+    if(isUs){ amt=Math.round(amt*100)/100; usd+=amt; lines.push('· '+nm+' +'+(q-q0)+'주  $'+amt.toLocaleString()); }
+    else { amt=Math.round(amt); krw+=amt; lines.push('· '+nm+' +'+(q-q0)+'주  ₩'+amt.toLocaleString()); }
+  });
+  return { krw:krw, usd:Math.round(usd*100)/100, lines:lines };
+}
 function savePf(){
+  var ub=pfUnpaidBuys();
+  if(ub.lines.length && confirm('수량이 늘어난 종목이 있습니다.\n'+ub.lines.join('\n')
+      +'\n\n이 매수대금을 예수금에서 뺄까요?\n(취소 = 빼지 않고 그대로 저장)')){
+    var ce=document.getElementById('pfCash'), ue=document.getElementById('pfCashUsd');
+    if(ub.krw) ce.value=(+ce.value||0)-ub.krw;
+    if(ub.usd) ue.value=Math.round(((+ue.value||0)-ub.usd)*100)/100;
+  }
   var rows=[];
   document.querySelectorAll("#pfEditBody tr").forEach(function(tr){
     var code=tr.querySelector('.e-cd').value.trim();
