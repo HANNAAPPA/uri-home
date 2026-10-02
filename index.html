@@ -1875,11 +1875,16 @@ function openDivForm(){
   var opts=hs.map(function(h,i){
     if(si<0&&h.code==='SCHD') si=i;
     return '<option value="'+i+'">'+esc(h.name||h.code)+' ('+h.code+')</option>';
-  }).join('');
+  }).join('')+'<option value="-1">✏️ 직접 입력 (매도한 종목 등)</option>';
   var box=document.createElement('div');
   box.className='sell-modal'; box.id='divModal';
   box.innerHTML='<div class="sell-box"><h3>배당 기록</h3>'
     +'<label>종목<select id="dfPick" onchange="divPick()">'+opts+'</select></label>'
+    +'<div class="sf-grid" id="dfManual" style="display:none">'
+    +'<label>시장<select id="dfMk" onchange="divPick()"><option value="KR">국내</option><option value="US">해외</option></select></label>'
+    +'<label>종목코드<input id="dfCode" placeholder="005930 / AAPL"></label>'
+    +'<label>종목명<input id="dfName"></label>'
+    +'</div>'
     +'<div class="sf-grid">'
     +'<label>입금일<input id="dfDate" type="date" value="'+new Date().toISOString().slice(0,10)+'"></label>'
     +'<label id="dfAmtL">세후 입금액<input id="dfAmt" type="number" step="any"></label>'
@@ -1894,8 +1899,17 @@ function openDivForm(){
   divPick();
 }
 
+function divCur(){
+  var v=Number(document.getElementById('dfPick').value);
+  if(v>=0) return (window._pfHoldings||[])[v]||{};
+  var g=function(id){ return document.getElementById(id).value.trim(); };
+  return { market:g('dfMk'), code:g('dfCode'), name:g('dfName') };
+}
+
 function divPick(){
-  var h=(window._pfHoldings||[])[Number(document.getElementById('dfPick').value)]||{};
+  var h=divCur();
+  var man=document.getElementById('dfPick').value==='-1';
+  document.getElementById('dfManual').style.display=man?'':'none';
   var us=h.market==='US';
   document.getElementById('dfAmtL').firstChild.nodeValue=us?'세후 입금액($)':'세후 입금액(원)';
   document.getElementById('dfFxL').style.display=us?'':'none';
@@ -1904,8 +1918,8 @@ function divPick(){
 function closeDivForm(){ var m=document.getElementById('divModal'); if(m) m.remove(); }
 
 function saveDiv(){
-  var h=(window._pfHoldings||[])[Number(document.getElementById('dfPick').value)];
-  if(!h){ alert('종목을 고르세요'); return; }
+  var h=divCur();
+  if(!h.code){ alert('종목을 고르세요'); return; }
   var g=function(id){ return document.getElementById(id).value; };
   var p={ date:g('dfDate'), market:h.market, code:h.code, name:h.name||h.code,
           amt:g('dfAmt'), fx:g('dfFx'), memo:g('dfMemo').trim(),
