@@ -1887,6 +1887,7 @@ function openDivForm(){
     +'</div>'
     +'<div class="sf-grid">'
     +'<label>입금일<input id="dfDate" type="date" value="'+new Date().toISOString().slice(0,10)+'"></label>'
+    +'<label id="dfCurL">입금 통화<select id="dfCur" onchange="divPick()"><option value="KRW">원 (증권앱 표시)</option><option value="USD">달러</option></select></label>'
     +'<label id="dfAmtL">세후 입금액<input id="dfAmt" type="number" step="any"></label>'
     +'<label id="dfFxL">환율(원/달러)<input id="dfFx" type="number" step="any" value="'+(window._pfFx?Math.round(window._pfFx*100)/100:'')+'"></label>'
     +'</div>'
@@ -1911,7 +1912,10 @@ function divPick(){
   var man=document.getElementById('dfPick').value==='-1';
   document.getElementById('dfManual').style.display=man?'':'none';
   var us=h.market==='US';
-  document.getElementById('dfAmtL').firstChild.nodeValue=us?'세후 입금액($)':'세후 입금액(원)';
+  var usd=us&&document.getElementById('dfCur').value==='USD';
+  document.getElementById('dfCurL').style.display=us?'':'none';
+  document.getElementById('dfAmtL').firstChild.nodeValue=usd?'세후 입금액($)':'세후 입금액(원)';
+  document.getElementById('dfFxL').firstChild.nodeValue=usd?'환율(원/달러)':'환율(원/달러, 달러 환산용)';
   document.getElementById('dfFxL').style.display=us?'':'none';
 }
 
@@ -1925,6 +1929,10 @@ function saveDiv(){
           amt:g('dfAmt'), fx:g('dfFx'), memo:g('dfMemo').trim(),
           addCash:document.getElementById('dfCash').checked };
   if(!(Number(p.amt)>0)){ alert('배당금을 입력하세요'); return; }
+  if(h.market==='US'&&g('dfCur')==='KRW'){
+    if(!(Number(p.fx)>0)){ alert('환율을 입력하세요'); return; }
+    p.amt=Math.round(Number(p.amt)/Number(p.fx)*10000)/10000;
+  }
   busy(true);
   google.script.run.withSuccessHandler(function(s){
     busy(false);
