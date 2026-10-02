@@ -1858,7 +1858,7 @@ function renderDivs(){
     h+='<tr><td>'+r.date.slice(5)+'</td>'
       +'<td>'+esc(r.name)+(r.market==='US'?' <span class="mk-us">US</span>':'')
       +(r.memo?'<div class="sell-memo">'+esc(r.memo)+'</div>':'')+'</td>'
-      +'<td class="r">'+(r.market==='US'?'$'+Number(r.amt).toLocaleString()+'<div class="sell-memo">@'+Math.round(r.fx).toLocaleString()+'</div>':won(r.amt))+'</td>'
+      +'<td class="r">'+(r.market==='US'&&r.cur!=='KRW'?'$'+Number(r.amt).toLocaleString()+'<div class="sell-memo">@'+Math.round(r.fx).toLocaleString()+'</div>':won(r.amt))+'</td>'
       +'<td class="r pos">+'+won(r.krw)+'</td>'
       +'<td class="r"><button class="sell-del" onclick="delDiv(\''+r.id+'\')">✕</button></td></tr>';
   });
@@ -1915,8 +1915,7 @@ function divPick(){
   var usd=us&&document.getElementById('dfCur').value==='USD';
   document.getElementById('dfCurL').style.display=us?'':'none';
   document.getElementById('dfAmtL').firstChild.nodeValue=usd?'세후 입금액($)':'세후 입금액(원)';
-  document.getElementById('dfFxL').firstChild.nodeValue=usd?'환율(원/달러)':'환율(원/달러, 달러 환산용)';
-  document.getElementById('dfFxL').style.display=us?'':'none';
+  document.getElementById('dfFxL').style.display=usd?'':'none';
 }
 
 function closeDivForm(){ var m=document.getElementById('divModal'); if(m) m.remove(); }
@@ -1929,10 +1928,7 @@ function saveDiv(){
           amt:g('dfAmt'), fx:g('dfFx'), memo:g('dfMemo').trim(),
           addCash:document.getElementById('dfCash').checked };
   if(!(Number(p.amt)>0)){ alert('배당금을 입력하세요'); return; }
-  if(h.market==='US'&&g('dfCur')==='KRW'){
-    if(!(Number(p.fx)>0)){ alert('환율을 입력하세요'); return; }
-    p.amt=Math.round(Number(p.amt)/Number(p.fx)*10000)/10000;
-  }
+  if(h.market==='US'&&g('dfCur')==='KRW') p.cur='KRW';
   busy(true);
   google.script.run.withSuccessHandler(function(s){
     busy(false);
