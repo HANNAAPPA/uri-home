@@ -267,6 +267,8 @@ a.slot:hover{border-color:var(--blue);}
 
 /* 📈 성과 추이 (내 계좌 vs 시장) */
 .pf-tiles.t3{grid-template-columns:repeat(3,1fr);}
+.pf-tiles.t4{grid-template-columns:repeat(4,1fr);}
+@media(max-width:640px){.pf-tiles.t4{grid-template-columns:repeat(2,1fr);}}
 .pf-tiles.t5{grid-template-columns:repeat(5,1fr);}
 @media(max-width:1000px){.pf-tiles.t5{grid-template-columns:repeat(3,1fr);}}
 @media(max-width:640px){.pf-tiles.t5{grid-template-columns:repeat(2,1fr);}}
@@ -1296,11 +1298,63 @@ function renderPf(d){
   html+='<div class="pf-note">환율 USD/KRW '+(d.fx?d.fx.toLocaleString():'—')+' · 시세는 네이버 금융 실시간(약 15분 지연 가능). '
       +'\'—\'나 회색 종목은 코드/심볼을 확인하세요.</div>';
 
+  html+='<div id="penWrap"></div>';
+
   document.getElementById("pane-pf").innerHTML=html;
   window._pfHoldings=d.holdings; window._pfCash=d.cash; window._pfCashUsd=d.cashUsd;
   window._pfCashUsdFx=d.cashUsdFx;
   window._pfRp=d.rp||[]; window._pfFx=d.fx||0;
-  loadHist(); loadSells(); loadDivs();
+  loadHist(); loadSells(); loadDivs(); loadPen();
+}
+
+/* ── 🏦 아내 연금저축계좌 ── */
+var penData=null;
+function loadPen(){
+  google.script.run.withSuccessHandler(function(d){ penData=d; renderPen(); })
+  .withFailureHandler(function(e){
+    var w=document.getElementById('penWrap');
+    if(w) w.innerHTML='<div class="pf-note">연금저축 조회 실패: '+esc(e.message)+'</div>';
+  }).pen_data();
+}
+function renderPen(){
+  var w=document.getElementById('penWrap'); if(!w||!penData) return;
+  var d=penData;
+  var h='<div class="pf-sech" style="margin-top:28px">🏦 아내 연금저축계좌</div>';
+  h+='<div class="pf-tiles t4">'
+    +tile('총 평가금액', won(d.total), '', true, '주식 '+won(d.eval)+' + 예수금')
+    +tile('예수금', won(d.cash), '', false, '매월 '+d.day+'일 +'+won(d.monthly)+' · 다음 '+d.next)
+    +tile('평가손익', (d.pl>=0?'+':'')+won(d.pl), plCls(d.pl), false, '수익률 <span class="'+plCls(d.plRate)+'">'+pct(d.plRate)+'</span>')
+    +tile('매입금액', won(d.cost), '', false, '')
+    +'</div>';
+  h+=holdTable(d.rows,false);
+  h+='<button class="pf-editbtn" onclick="penAddCash()">💰 예수금 추가</button> '
+    +'<button class="pf-editbtn" onclick="penBuy()">➕ 매수 기록</button>';
+  h+='<div class="pf-note">매월 '+d.day+'일 월 납입금은 그날 이후 처음 열 때 예수금에 자동으로 더해집니다. '
+    +'매수 기록을 남기면 평단이 합쳐지고 매수대금이 예수금에서 빠집니다. (예수금 줄이기는 음수로 입력)</div>';
+  w.innerHTML=h;
+}
+function penApply(d){
+  if(d&&d.error){ alert(d.error); return; }
+  penData=d; renderPen();
+}
+function penAddCash(){
+  var v=prompt('예수금에 추가할 금액(원). 줄이려면 -를 붙이세요.','100000');
+  if(v===null) return;
+  google.script.run.withSuccessHandler(penApply)
+    .withFailureHandler(function(e){ alert('실패: '+e.message); })
+    .pen_addCash(Number(String(v).replace(/,/g,'')));
+}
+function penBuy(){
+  var rows=penData.rows;
+  var code=prompt('매수할 종목코드\n'+rows.map(function(r){ return r.code+' '+r.name; }).join('\n'),rows[0]?rows[0].code:'');
+  if(!code) return; code=code.trim();
+  var name='';
+  if(!rows.some(function(r){ return r.code===code; })){ name=prompt('새 종목 이름',''); if(!name) return; }
+  var qty=prompt('매수 수량','1'); if(!qty) return;
+  var price=prompt('매수 단가(원)',''); if(!price) return;
+  google.script.run.withSuccessHandler(penApply)
+    .withFailureHandler(function(e){ alert('실패: '+e.message); })
+    .pen_buy({code:code,name:name,qty:Number(qty),price:Number(String(price).replace(/,/g,''))});
 }
 
 /* ── 📈 성과 추이 (내 계좌 vs 시장) ── */
