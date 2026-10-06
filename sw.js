@@ -1,5 +1,5 @@
 /* 앱 껍데기(같은 출처 파일)만 저장한다. 서버 API·유튜브·지도는 손대지 않는다. */
-var V = 'hk-145dd009bf';
+var V = 'hk-16bb3627bf';
 var SHELL = ['./', './index.html', './shim.js', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', function(e){
