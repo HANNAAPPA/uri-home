@@ -1293,23 +1293,6 @@ function renderPf(d){
      +sumBox('해외 총 평가금액',won(d.usSummary.eval),'')+'</div>';
   html+= d.us.length? holdTable(d.us,true) : '<div class="empty" style="margin-bottom:18px">해외 보유 종목 없음</div>';
 
-  // 추가매수 (편집 모드 없이 바로)
-  if(d.kr.length||d.us.length){
-    html+='<div class="pf-card" style="margin:10px 0 14px"><h3>➕ 추가매수 (예수금에서 자동 차감)</h3>';
-    d.kr.concat(d.us).forEach(function(x,i){
-      var us=i>=d.kr.length;
-      html+='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0">'
-        +'<span style="flex:1 1 140px;font-weight:600">'+esc(x.name)+'</span>'
-        +'<input id="pbQ'+i+'" type="number" min="1" placeholder="수량" style="width:70px" oninput="pbCalc('+i+','+us+')">'
-        +'<input id="pbP'+i+'" type="number" step="any" value="'+(x.ok?x.price:'')+'" placeholder="단가'+(us?'($)':'')+'" style="width:90px" oninput="pbCalc('+i+','+us+')">'
-        +(us?'<input id="pbF'+i+'" type="number" value="'+Math.round(d.fx||0)+'" placeholder="환율" style="width:70px" oninput="pbCalc('+i+',true)">'
-            +'<select id="pbY'+i+'"><option value="usd">달러 예수금</option><option value="krw">원화(환전)</option></select>':'')
-        +'<span id="pbT'+i+'" style="min-width:90px;color:var(--muted);font-size:12px"></span>'
-        +'<button class="pf-editbtn" style="margin:0" onclick="pbBuy('+i+','+us+',\''+escAttr(x.code)+'\')">매수</button></div>';
-    });
-    html+='<div style="font-size:12px;color:var(--muted)">단가는 현재가로 채워져 있어요. 실제 체결가와 다르면 고쳐 쓰세요. 예수금 '+won(d.cash)
-      +(d.cashUsd>0?' · $'+d.cashUsd.toLocaleString():'')+'</div></div>';
-  }
   // 편집 버튼
   html+='<button class="pf-editbtn" onclick="openPfEdit()">✏️ 보유종목·현금 편집</button>';
   html+='<div class="pf-note">환율 USD/KRW '+(d.fx?d.fx.toLocaleString():'—')+' · 시세는 네이버 금융 실시간(약 15분 지연 가능). '
@@ -1322,24 +1305,6 @@ function renderPf(d){
   window._pfCashUsdFx=d.cashUsdFx;
   window._pfRp=d.rp||[]; window._pfFx=d.fx||0;
   loadHist(); loadSells(); loadDivs(); loadPen();
-}
-
-function pbCalc(i,us){
-  var q=Number(document.getElementById('pbQ'+i).value)||0, p=Number(document.getElementById('pbP'+i).value)||0;
-  var f=us?(Number(document.getElementById('pbF'+i).value)||0):1;
-  document.getElementById('pbT'+i).textContent=q&&p?'= '+(us?'$'+(q*p).toLocaleString(undefined,{maximumFractionDigits:2})+' (₩'+Math.round(q*p*f).toLocaleString()+')':won(q*p)):'';
-}
-function pbBuy(i,us,code){
-  var q=Number(document.getElementById('pbQ'+i).value), p=Number(document.getElementById('pbP'+i).value);
-  if(!(q>0)||!(p>0)){ alert('수량과 단가를 입력하세요'); return; }
-  var pay=us?document.getElementById('pbY'+i).value:'krw';
-  var f=us?Number(document.getElementById('pbF'+i).value):0;
-  busy(true);
-  google.script.run.withSuccessHandler(function(r){
-    if(r&&r.error){ alert(r.error); busy(false); return; }
-    loadPf();
-  }).withFailureHandler(function(e){ alert('실패: '+e.message); busy(false); })
-    .pf_buy({code:code,qty:q,price:p,fx:f,pay:pay});
 }
 
 /* ── 🏦 아내 연금저축계좌 ── */
@@ -1362,33 +1327,11 @@ function renderPen(){
     +tile('매입금액', won(d.cost), '', false, '')
     +'</div>';
   h+=holdTable(d.rows,false);
-  h+='<div class="pf-card" style="margin:10px 0"><h3>➕ 추가매수 (예수금에서 자동 차감)</h3>';
-  d.rows.forEach(function(r,i){
-    h+='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0">'
-      +'<span style="flex:1 1 140px;font-weight:600">'+esc(r.name)+'</span>'
-      +'<input id="penQ'+i+'" type="number" min="1" placeholder="수량" style="width:70px" oninput="penCalc('+i+')">'
-      +'<input id="penP'+i+'" type="number" value="'+(r.ok?r.price:'')+'" placeholder="단가" style="width:90px" oninput="penCalc('+i+')">'
-      +'<span id="penT'+i+'" style="min-width:90px;color:var(--muted);font-size:12px"></span>'
-      +'<button class="pf-editbtn" style="margin:0" onclick="penBuyRow('+i+')">매수</button></div>';
-  });
-  h+='<div style="font-size:12px;color:var(--muted)">단가는 현재가로 채워져 있어요. 실제 체결가와 다르면 고쳐 쓰세요. 예수금 '+won(d.cash)+'</div></div>';
   h+='<button class="pf-editbtn" onclick="penAddCash()">💰 예수금 추가</button> '
-    +'<button class="pf-editbtn" onclick="penBuy()">🆕 새 종목 매수</button>';
+    +'<button class="pf-editbtn" onclick="penBuy()">➕ 매수 기록</button>';
   h+='<div class="pf-note">매월 '+d.day+'일 월 납입금은 그날 이후 처음 열 때 예수금에 자동으로 더해집니다. '
     +'매수 기록을 남기면 평단이 합쳐지고 매수대금이 예수금에서 빠집니다. (예수금 줄이기는 음수로 입력)</div>';
   w.innerHTML=h;
-}
-function penCalc(i){
-  var q=Number(document.getElementById('penQ'+i).value)||0, p=Number(document.getElementById('penP'+i).value)||0;
-  document.getElementById('penT'+i).textContent=q&&p?'= '+won(q*p):'';
-}
-function penBuyRow(i){
-  var r=penData.rows[i], q=Number(document.getElementById('penQ'+i).value), p=Number(document.getElementById('penP'+i).value);
-  if(!(q>0)||!(p>0)){ alert('수량과 단가를 입력하세요'); return; }
-  if(q*p>penData.cash && !confirm('예수금('+won(penData.cash)+')보다 큽니다. 그래도 기록할까요? (예수금은 0원이 됩니다)')) return;
-  google.script.run.withSuccessHandler(penApply)
-    .withFailureHandler(function(e){ alert('실패: '+e.message); })
-    .pen_buy({code:r.code,name:r.name,qty:q,price:p});
 }
 function penApply(d){
   if(d&&d.error){ alert(d.error); return; }
