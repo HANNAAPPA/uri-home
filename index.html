@@ -708,11 +708,10 @@ details.eg-st:not([open]) .chev::after{content:'펼치기 ▾'}
   <div class="tabs">
     <button class="tab on" data-tab="home" onclick="switchTab('home')">🏠 홈</button>
     <button class="tab" data-tab="sit" onclick="switchTab('sit')">👶 시터</button>
-    <button class="tab" data-tab="child" onclick="switchTab('child')">📅 아이</button>
-    <button class="tab" data-tab="trip" onclick="switchTab('trip')">🌏 여행</button>
-    <button class="tab" data-tab="estate" onclick="switchTab('estate')">🏢 부동산</button>
     <button class="tab" data-tab="pf" onclick="switchTab('pf')">📈 포트폴리오</button>
+    <button class="tab" data-tab="estate" onclick="switchTab('estate')">🏢 부동산</button>
     <button class="tab" data-tab="eng" onclick="switchTab('eng')">🗣 영어</button>
+    <button class="tab" data-tab="trip" onclick="switchTab('trip')">🌏 여행</button>
   </div>
 </header>
 
@@ -910,7 +909,7 @@ function delAnn(id){ google.script.run.withSuccessHandler(patchAnn).deleteAnnive
 function patchAnn(list){ var s=document.querySelector(".ddsec"); if(s) s.innerHTML=ddSecInner(list); }
 
 /* ── 👶 시터 ── */
-var sit={d:null,y:0,m:0};
+var sit={d:null,y:0,m:0,pop:null};
 function sitWon(n){return n.toLocaleString('ko-KR')+'원';}
 function loadSit(){
   if(!sit.y){var n=new Date();sit.y=n.getFullYear();sit.m=n.getMonth()+1;}
@@ -926,14 +925,16 @@ function sitMove(dm){
   sit.m+=dm;if(sit.m<1){sit.m=12;sit.y--;}if(sit.m>12){sit.m=1;sit.y++;}
   renderSit();
 }
-function sitTap(ds){
+function sitTap(ds){ sit.pop=ds; renderSit(); }
+function sitPick(h){
+  var ds=sit.pop;sit.pop=null;
   var ym=ds.slice(0,7),mo=sit.d.days[ym]||(sit.d.days[ym]={});
-  var cur=mo[ds]||0,nx=(cur+1)%3;
-  if(nx) mo[ds]=nx; else delete mo[ds];
+  if(h) mo[ds]=h; else delete mo[ds];
   sit.d.hours[ym]=Object.keys(mo).reduce(function(s,k){return s+mo[k];},0);
   renderSit();
-  google.script.run.withFailureHandler(function(e){alert('저장 실패: '+e.message);loadSit();}).sit_set(ds,nx);
+  google.script.run.withFailureHandler(function(e){alert('저장 실패: '+e.message);loadSit();}).sit_set(ds,h);
 }
+function sitClose(){ sit.pop=null; renderSit(); }
 function sitPay(ym,amt){
   if(amt>0) sit.d.paid[ym]=amt; else delete sit.d.paid[ym];
   renderSit();
@@ -953,6 +954,15 @@ function renderSit(){
     var ds=ym+'-'+p2(day),v=mo[ds]||0;
     cells+='<div class="sc'+(v?' on':'')+(ds===d.today?' td':'')+'" onclick="sitTap(\''+ds+'\')">'+
       '<span class="sn">'+day+'</span>'+(v?'<span class="sk">✓</span>'+(v===2?'<span class="sh">2h</span>':''):'')+'</div>';
+  }
+  var popup='';
+  if(sit.pop){
+    var pv=(d.days[sit.pop.slice(0,7)]||{})[sit.pop]||0,pd2=sit.pop.split('-');
+    popup='<div class="sit-ov" onclick="sitClose()"><div class="sit-pp" onclick="event.stopPropagation()">'+
+      '<b>'+(+pd2[1])+'월 '+(+pd2[2])+'일 ('+DOW[new Date(sit.pop+'T00:00:00').getDay()]+')</b>'+
+      [[1,'1시간',d.rate],[2,'2시간',d.rate*2]].map(function(o){
+        return '<button class="pk'+(pv===o[0]?' sel':'')+'" onclick="sitPick('+o[0]+')">✓ '+o[1]+' <small>'+sitWon(o[2])+'</small></button>';}).join('')+
+      '<button class="pk x" onclick="sitPick(0)">'+(pv?'지우기':'비워두기')+'</button></div></div>';
   }
   var paidThis=d.paid[ym];
   var st=paidThis?'<span class="sp ok">지급 완료 '+sitWon(paidThis)+'</span><button class="sb" onclick="sitPay(\''+ym+'\',0)">취소</button>'
@@ -980,14 +990,19 @@ function renderSit(){
    '.sb.go{background:var(--green);color:#fff;border-color:var(--green)}.sp.ok{color:var(--green);font-weight:700;font-size:13px}'+
    '.sit-t{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;font-size:13px}'+
    '.sit-t th,.sit-t td{padding:8px 6px;text-align:right;border-bottom:1px solid var(--line)}.sit-t th:first-child,.sit-t td:first-child{text-align:left}'+
-   '.okc{color:var(--green)}</style>'+
+   '.okc{color:var(--green)}.sit-box{max-width:420px;margin:0 auto}'+
+   '.sit-ov{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:50}'+
+   '.sit-pp{background:var(--card);border-radius:14px;padding:16px;width:260px;display:flex;flex-direction:column;gap:8px;box-shadow:0 8px 30px rgba(0,0,0,.25)}'+
+   '.sit-pp b{font-size:15px;margin-bottom:2px}.pk{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:12px;font-size:15px;text-align:left}'+
+   '.pk small{color:var(--muted);float:right;font-size:12px}.pk.sel{background:#e8f6ee;border-color:var(--green);color:var(--green);font-weight:700}.pk.x{color:var(--muted);text-align:center}</style>'+
+   '<div class="sit-box">'+
    '<div class="sit-nav"><button onclick="sitMove(-1)">‹</button><b>'+sit.y+'년 '+sit.m+'월</b><button onclick="sitMove(1)">›</button></div>'+
    '<div class="sit-g">'+DOW.map(function(w){return '<div class="dw">'+w+'</div>';}).join('')+cells+'</div>'+
-   '<div class="sm" style="font-size:12px;color:var(--muted);margin-top:6px">칸을 누르면 1시간 ✓ → 한 번 더 2시간 ✓ → 한 번 더 취소 · 시간당 '+sitWon(d.rate)+'</div>'+
+   '<div class="sm" style="font-size:12px;color:var(--muted);margin-top:6px">칸을 누르면 1시간·2시간을 고르는 창이 떠요 · 시간당 '+sitWon(d.rate)+'</div>'+
    '<div class="sit-sum"><div><div class="sm">'+sit.m+'월 근무 '+h+'시간 · 월말 지급</div><div class="big">'+sitWon(amt)+'</div></div><div>'+st+'</div></div>'+
    '<h3 style="margin:16px 0 8px;font-size:15px">누적 지급 내역</h3>'+
    '<table class="sit-t"><tr><th>월</th><th>근무</th><th>금액</th><th>지급</th></tr>'+rows+
-   '<tr><td colspan="3"><b>누적 지급 합계</b></td><td><b>'+sitWon(total)+'</b></td></tr></table>';
+   '<tr><td colspan="3"><b>누적 지급 합계</b></td><td><b>'+sitWon(total)+'</b></td></tr></table></div>'+popup;
 }
 
 /* ── 🧸 키즈카페 ── */
