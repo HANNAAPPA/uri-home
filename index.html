@@ -70,6 +70,8 @@ h3{font-size:15px;margin:0 0 12px;}
 .daypop .dph b{font-size:15px;}
 .daypop .dph button{border:0;background:none;font-size:20px;color:var(--muted);cursor:pointer;}
 .daypop .dpev{font-size:14px;}
+.dpend{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12px;color:var(--muted);}
+.dpend input{border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-size:13px;}
 .daypanel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;}
 .daypanel h4{margin:0 0 6px;font-size:13px;}
 .dpev{padding:5px 0;border-top:1px solid var(--line);font-size:13px;display:flex;gap:8px;}
@@ -875,7 +877,8 @@ function openDay(ds){
   }).join(""):'<div class="empty">일정 없음</div>';
   var add='<div class="dpadd"><input id="evTime" type="time">'+
     '<input id="evTitle" type="text" placeholder="일정 추가" onkeydown="if(event.key===\'Enter\')addEv(this)">'+
-    '<button onclick="addEv(this)">+</button></div>';
+    '<button onclick="addEv(this)">+</button></div>'+
+    '<div class="dpend"><label>여러 날이면 종료일</label><input id="evEnd" type="date" min="'+ds+'" onchange="document.getElementById(\'evTime\').disabled=!!this.value"></div>';
   var o=document.createElement('div'); o.id='dayov'; o.className='dayov';
   o.onclick=function(e){ if(e.target===o) closeDay(); };
   o.innerHTML='<div class="daypop"><div class="dph"><b>'+(+ds.slice(5,7))+'월 '+(+ds.slice(8))+'일 ('+DOW[dt.getDay()]+')</b>'+
@@ -886,6 +889,8 @@ function openDay(ds){
 function addEv(el){
   var time=document.getElementById("evTime").value;
   var title=document.getElementById("evTitle").value.trim();
+  var endD=document.getElementById("evEnd").value;
+  if(endD&&endD<selDate){alert("종료일이 시작일보다 빨라요");return;}
   if(!title){alert("일정 제목을 입력하세요");return;}
   var btn=el.tagName==="BUTTON"?el:el.parentNode.querySelector("button");
   btn.disabled=true;btn.textContent="…";
@@ -893,7 +898,7 @@ function addEv(el){
     closeDay();pendingSel=selDate;loadHome();
   }).withFailureHandler(function(e){
     btn.disabled=false;btn.textContent="+";alert("추가 실패: "+e.message);
-  }).addChildEvent(selDate,time,title);
+  }).addChildEvent(selDate,endD?'':time,title,endD);
 }
 function saveMemoNow(btn){
   var t=document.getElementById("memoBox").value;
