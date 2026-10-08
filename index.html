@@ -89,7 +89,7 @@ h3{font-size:15px;margin:0 0 12px;}
 .leg .lo{background:var(--once);}
 .up{display:flex;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:13px;align-items:baseline;}
 .up:first-of-type{border-top:0;}
-.up .ud{width:70px;flex:none;font-weight:600;}
+.up .ud{min-width:70px;flex:none;font-weight:600;}
 .up .ut{color:var(--muted);width:38px;flex:none;font-size:12px;}
 .up .un{flex:1;}
 .up .un.once,.dpev .once{color:var(--once);}
@@ -797,26 +797,35 @@ function toast2(msg){
     t.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#1f2733;color:#fff;padding:10px 14px;border-radius:12px;font-size:13px;z-index:999;max-width:90vw'; document.body.appendChild(t); }
   t.textContent=msg; t.style.display='block'; clearTimeout(t._h); t._h=setTimeout(function(){ t.style.display='none'; },4000);
 }
-function applyCal(d){
+function indexEvents(list){
   homeEvents={};
-  d.events.forEach(function(e){(homeEvents[e.date]=homeEvents[e.date]||[]).push(e);});
+  list.forEach(function(e){
+    var d=new Date(e.date+'T00:00'),last=e.end||e.date,n=0;
+    while(n<62){
+      var k=d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+      if(k>last) break;
+      (homeEvents[k]=homeEvents[k]||[]).push(e);
+      d.setDate(d.getDate()+1);n++;
+    }
+  });
+}
+function applyCal(d){
+  indexEvents(d.events);
   var cal=document.querySelector('.cal'); if(!cal) return;
   cal.outerHTML=calHtml(d.today);
   var pre=homeY+'-'+p2(homeM)+'-';
   showDay(selDate&&selDate.indexOf(pre)===0?selDate:(d.today.indexOf(pre)===0?d.today:pre+'01'));
 }
 function renderHome(d){
-  homeEvents={};
-  d.events.forEach(function(e){(homeEvents[e.date]=homeEvents[e.date]||[]).push(e);});
+  indexEvents(d.events);
   var right=
     '<div class="rc"><h3>📅 다가오는 일정</h3>'+
-      '<div class="leg"><span><i class="lb"></i>반복</span><span><i class="lo"></i>일회성</span></div>'+
       upcomingHtml(d.upcoming)+'</div>'+
-    '<div class="rc ddsec">'+ddSecInner(d.anniversaries)+'</div>'+
     '<div class="rc memo"><h3>📝 공유 메모</h3>'+
       '<textarea id="memoBox" placeholder="장보기·전달사항 등… 부부가 같이 씁니다">'+esc(d.memo.text)+'</textarea>'+
       '<div class="memobar"><button onclick="saveMemoNow(this)">저장</button>'+
-      '<span class="mt" id="memoAt">'+(d.memo.at?'마지막 저장 '+d.memo.at:'')+'</span></div></div>';
+      '<span class="mt" id="memoAt">'+(d.memo.at?'마지막 저장 '+d.memo.at:'')+'</span></div></div>'+
+    '<div class="rc ddsec">'+ddSecInner(d.anniversaries)+'</div>';
   document.getElementById("pane-home").innerHTML=
     '<div class="homegrid"><div class="homeleft">'+calHtml(d.today)+
     '</div>'+
@@ -836,7 +845,7 @@ function calHtml(today){
     var dow=(startDow+n-1)%7;
     var evs=homeEvents[ds]||[];
     var mx=window.innerWidth<600?2:3,more=evs.length>mx?evs.length-(mx-1):0,show=more?evs.slice(0,mx-1):evs;
-    var dots=show.map(function(e){return '<div class="ce'+(e.recur?'':' once')+'">'+(e.allday||!e.time?'':e.time.replace(/^0/,'')+' ')+esc(e.title)+'</div>';}).join('')+(more?'<div class="cmore">+'+more+'개</div>':'');
+    var dots=show.map(function(e){return '<div class="ce'+(e.recur?'':' once')+'">'+(e.allday||!e.time||e.date!==ds?'':e.time.replace(/^0/,'')+' ')+esc(e.title)+'</div>';}).join('')+(more?'<div class="cmore">+'+more+'개</div>':'');
     html+='<div class="calc'+(ds===today?' today':'')+(dow===0?' sun':'')+'" data-d="'+ds+'" onclick="openDay(\''+ds+'\')">'+
       '<span class="cn">'+n+'</span>'+dots+'</div>';
   }
@@ -846,7 +855,7 @@ function upcomingHtml(list){
   if(!list.length) return '<div class="empty" style="padding:8px 0">2주간 일정 없음</div>';
   return list.map(function(e){
     var dt=new Date(e.date+"T00:00");
-    return '<div class="up"><span class="ud">'+e.date.slice(5)+'('+DOW[dt.getDay()]+')</span>'+
+    return '<div class="up"><span class="ud">'+(e.end&&e.end>e.date?e.date.slice(5)+'~'+e.end.slice(5):e.date.slice(5)+'('+DOW[dt.getDay()]+')')+'</span>'+
       '<span class="ut">'+(e.allday?'종일':e.time)+'</span>'+
       '<span class="un'+(e.recur?'':' once')+'">'+e.title+'</span></div>';
   }).join("");
