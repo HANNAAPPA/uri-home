@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.youtube.com https://s.ytimg.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; connect-src https://script.google.com https://script.googleusercontent.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com; media-src 'self' blob: data:; font-src 'self' data:; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.youtube.com https://s.ytimg.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; connect-src https://script.google.com https://script.googleusercontent.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com; media-src 'self' blob: data:; font-src 'self' data: https://cdnjs.cloudflare.com; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="strict-origin">
 <meta name="robots" content="noindex,nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -705,6 +705,49 @@ details.eg-st:not([open]) .chev::after{content:'펼치기 ▾'}
 .re-sim .out .val{font-size:20px;font-weight:800}
 .re-sim .out .sm{font-size:11.5px;color:#64748b;margin-top:2px;line-height:1.4}
 .re-sim .note{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:10px}
+/* 📐 임용 */
+.imbar{display:flex;align-items:center;gap:10px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;padding:10px 14px;margin-bottom:12px;cursor:pointer;font-size:14px}
+.imbar b{font-size:18px;color:#4338ca}
+.imbar .im-pg{margin-left:auto;font-size:13px;color:#4338ca;font-weight:700}
+.im{max-width:760px;margin:0 auto}
+.im-hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.im-hd .dd{font-size:28px;font-weight:800;color:#4338ca}
+.im-hd .ph{font-size:13px;color:var(--muted)}
+.im-nav{display:flex;align-items:center;gap:8px;margin:10px 0 14px}
+.im-nav button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer}
+.im-nav button:disabled{opacity:.35}
+.im-nav .d{font-weight:700;font-size:15px}
+.im-nav .p{margin-left:auto;font-size:13px;color:var(--muted)}
+.im-strip{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:14px}
+.im-strip i{width:12px;height:12px;border-radius:3px;background:#e5e7eb;cursor:pointer}
+.im-strip i.p{background:#a5b4fc}.im-strip i.f{background:#4338ca}.im-strip i.t{outline:2px solid #f59e0b}
+.imq{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+.imq .tg{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted);margin-bottom:8px}
+.imq .tg .sl{background:#4338ca;color:#fff;border-radius:6px;padding:1px 7px;font-weight:700}
+.imq .tg .ar{color:var(--txt);font-weight:700}
+.imq .tg .st{margin-left:auto;font-size:15px}
+.imq .bd{font-size:15px;line-height:1.75;overflow-x:auto;overflow-y:hidden}
+.imq .bd .katex-display{margin:.6em 0;padding:2px 0}
+.imq .bx{background:#f8fafc;border-left:3px solid #a5b4fc;border-radius:6px;padding:8px 12px;margin:8px 0}
+.imq .open{margin-top:10px;width:100%;padding:10px;border:1px dashed #a5b4fc;background:#f5f7ff;border-radius:10px;color:#4338ca;font-size:14px;cursor:pointer}
+.imq .an{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+.imq .an h4{margin:12px 0 6px;font-size:13px;color:#4338ca}
+.imq .an h4:first-child{margin-top:0}
+.imq .ans{background:#ecfdf5;border-radius:8px;padding:8px 12px;font-weight:700}
+.imq .rb label{display:flex;gap:8px;align-items:flex-start;padding:6px 0;font-size:14px;line-height:1.6;border-bottom:1px dashed var(--line)}
+.imq .rb input{margin-top:5px;width:18px;height:18px;flex:none}
+.imq .rb .pt{flex:none;color:#4338ca;font-weight:700}
+.imq .keys span{display:inline-block;background:#fef3c7;color:#92400e;border-radius:6px;padding:2px 8px;margin:2px 4px 2px 0;font-size:13px}
+.imq .tip{font-size:13px;line-height:1.6;color:#475569;background:#f8fafc;border-radius:8px;padding:8px 12px;margin-top:6px}
+.imq .mk{display:flex;gap:6px;margin-top:12px}
+.imq .mk button{flex:1;padding:10px 0;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:14px;cursor:pointer}
+.imq .mk button.on.o{background:#dcfce7;border-color:#16a34a}
+.imq .mk button.on.h{background:#fef9c3;border-color:#ca8a04}
+.imq .mk button.on.x{background:#fee2e2;border-color:#dc2626}
+.im-sec{font-size:15px;font-weight:800;margin:20px 0 10px}
+.im-area{display:grid;grid-template-columns:90px 1fr 54px;gap:6px 10px;align-items:center;font-size:13px}
+.im-area .bt{height:12px;border-radius:6px;background:#e5e7eb;overflow:hidden;display:flex}
+.im-area .bt i{display:block;height:100%}
 </style></head>
 <body>
 <header>
@@ -718,6 +761,7 @@ details.eg-st:not([open]) .chev::after{content:'펼치기 ▾'}
     <button class="tab" data-tab="sit" onclick="switchTab('sit')">👶 시터</button>
     <button class="tab" data-tab="pf" onclick="switchTab('pf')">📈 포트폴리오</button>
     <button class="tab" data-tab="estate" onclick="switchTab('estate')">🏢 부동산</button>
+    <button class="tab" data-tab="im" onclick="switchTab('im')">📐 임용</button>
     <button class="tab" data-tab="eng" onclick="switchTab('eng')">🗣 영어</button>
     <button class="tab" data-tab="trip" onclick="switchTab('trip')">🌏 여행</button>
   </div>
@@ -732,18 +776,19 @@ details.eg-st:not([open]) .chev::after{content:'펼치기 ▾'}
   <div class="pane" id="pane-estate"><div class="state">불러오는 중…</div></div>
   <div class="pane" id="pane-pf"><div class="state">불러오는 중…</div></div>
   <div class="pane" id="pane-eng"><div class="state">불러오는 중…</div></div>
+  <div class="pane" id="pane-im"><div class="state">불러오는 중…</div></div>
 </div>
 
 <script>
 var DOW=["일","월","화","수","목","금","토"];
-var loaded={home:false,kids:false,sit:false,child:false,estate:false,pf:false,eng:false};
+var loaded={home:false,kids:false,sit:false,child:false,estate:false,pf:false,eng:false,im:false};
 var current="home";
 function p2(n){return ('0'+n).slice(-2);}
 
 function switchTab(t){
   current=t;
   if(t!=="eng"&&typeof egStop==="function") egStop();
-  ["home","kids","sit","child","trip","estate","pf","eng"].forEach(function(k){
+  ["home","kids","sit","child","trip","estate","pf","eng","im"].forEach(function(k){
     document.getElementById("pane-"+k).classList.toggle("on",k===t);
   });
   document.querySelectorAll(".tab").forEach(function(b){b.classList.toggle("on",b.dataset.tab===t);});
@@ -760,6 +805,7 @@ function loadTab(t){
   else if(t==="estate") loadEstate();
   else if(t==="pf") loadPf();
   else if(t==="eng") loadEng();
+  else if(t==="im") loadIm();
 }
 function busy(on){var b=document.getElementById("refresh");b.disabled=on;b.textContent=on?"조회 중…":"새로고침";}
 
@@ -829,7 +875,7 @@ function renderHome(d){
       '<div class="memobar"><button onclick="saveMemoNow(this)">저장</button>'+
       '<span class="mt" id="memoAt">'+(d.memo.at?'마지막 저장 '+d.memo.at:'')+'</span></div></div>'+
     '<div class="rc ddsec">'+ddSecInner(d.anniversaries)+'</div>';
-  document.getElementById("pane-home").innerHTML=
+  document.getElementById("pane-home").innerHTML=imHomeBar(d.im,d.today)+
     '<div class="homegrid"><div class="homeleft">'+calHtml(d.today)+
     '</div>'+
     '<div class="homeright">'+right+'</div></div>';
@@ -3694,6 +3740,156 @@ function egStop(){
   egCancelTurn(); egOvHide();
   eg.rep.on=false; clearTimeout(eg.rep.timer); eg.rate=1;
   try{ if(eg.player&&eg.player.pauseVideo) eg.player.pauseVideo(); }catch(e){}
+}
+</script>
+<script>
+/* ── 📐 임용(중등 수학) ──
+   하루 4문항(A 내용학 기입 · B 내용학 서술 · C 수학교육론 · D 교육학). 손으로 풀고 → 답안 보기 →
+   채점 요소 체크 → ✅🔺❌. 틀림은 2일 뒤, 부분은 5일 뒤 「다시 풀기」에 뜬다. 수식은 KaTeX. */
+var im={data:null, open:{}, rb:{}, kx:null};
+var IM_SLOT={A:'내용학 기입',B:'내용학 서술',C:'수학교육론',D:'교육학'};
+var IM_ST={o:'✅',h:'🔺',x:'❌'};
+function imDiff(a,b){ return Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/864e5); }
+function imAdd(d,n){ var t=new Date(d+'T00:00'); t.setDate(t.getDate()+n); return t.getFullYear()+'-'+p2(t.getMonth()+1)+'-'+p2(t.getDate()); }
+function imHomeBar(m,today){
+  if(!m||!m.n) return '';
+  var dd=imDiff(today,m.exam);
+  return '<div class="imbar" onclick="switchTab(\'im\')">📐 임용 <b>D-'+dd+'</b>'+
+    '<span>오늘 '+m.n+'문항'+(m.due?' · 다시 풀기 '+m.due:'')+'</span>'+
+    '<span class="im-pg">'+(m.done>=m.n?'오늘 끝 ✓':m.done+'/'+m.n)+'</span></div>';
+}
+function imKatex(cb){
+  if(window.renderMathInElement) return cb();
+  if(im.kx) return im.kx.push(cb);
+  im.kx=[cb];
+  var base='https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/';
+  var l=document.createElement('link'); l.rel='stylesheet'; l.href=base+'katex.min.css'; document.head.appendChild(l);
+  var s=document.createElement('script'); s.src=base+'katex.min.js';
+  s.onload=function(){
+    var a=document.createElement('script'); a.src=base+'contrib/auto-render.min.js';
+    a.onload=function(){ var q=im.kx; im.kx=null; q.forEach(function(f){ f(); }); };
+    document.head.appendChild(a);
+  };
+  document.head.appendChild(s);
+}
+function imMath(el){
+  imKatex(function(){
+    try{ renderMathInElement(el,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false}); }catch(e){}
+  });
+}
+// 마크다운 일부만: '> ' 줄은 상자, **굵게**, 줄바꿈
+function imMd(s){
+  var out=[], box=[];
+  function line(t){ return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>'); }
+  function flush(){ if(box.length){ out.push('<div class="bx">'+box.join('<br>')+'</div>'); box=[]; } }
+  String(s||'').split('\n').forEach(function(t){
+    if(/^\s*>/.test(t)){ box.push(line(t.replace(/^\s*>\s?/,''))); return; }
+    flush(); out.push(line(t)+'<br>');
+  });
+  flush();
+  return out.join('').replace(/(<br>)+$/,'');
+}
+function loadIm(date){
+  busy(true);
+  google.script.run.withSuccessHandler(function(d){
+    im.data=d; loaded.im=true; busy(false); renderIm();
+  }).withFailureHandler(function(e){
+    document.getElementById('pane-im').innerHTML='<div class="state">불러오기 실패: '+esc(e.message)+'</div>'; busy(false);
+  }).im_data(date||'');
+}
+function imCard(q,rev){
+  var l=im.data.log[q.id], tot=0;
+  (q.rubric||[]).forEach(function(r){ tot+=r[0]; });
+  var h='<div class="imq" id="imq-'+q.id+'"><div class="tg"><span class="sl">'+q.slot+'</span>'+
+    '<span class="ar">'+esc(IM_SLOT[q.slot])+' · '+esc(q.area)+'</span>'+
+    '<span>'+tot+'점 · '+q.min+'분</span>'+
+    (rev?'<span>🔁 '+q.date.slice(5).replace('-','/')+' 문항</span>':'')+
+    '<span class="st">'+(l?IM_ST[l.s]:'')+'</span></div>'+
+    '<div class="bd">'+imMd(q.q)+'</div>';
+  if(!im.open[q.id]) return h+'<button class="open" onclick="imOpen(\''+q.id+'\')">✍️ 종이에 풀었으면 — 답안 보기</button></div>';
+  var ck=im.rb[q.id]||[], sc=0;
+  (q.rubric||[]).forEach(function(r,i){ if(ck[i]) sc+=r[0]; });
+  h+='<div class="an"><h4>정답</h4><div class="ans bd">'+imMd(q.ans)+'</div>'+
+    '<h4>'+(q.slot==='D'?'답안 예시 (그대로 옮겨 쓸 문장)':'모범 풀이')+'</h4><div class="bd">'+imMd(q.sol)+'</div>'+
+    '<h4>채점 기준 — 내 답안에 있는 것만 체크 ('+sc+'/'+tot+'점)</h4><div class="rb">'+
+    (q.rubric||[]).map(function(r,i){
+      return '<label><input type="checkbox"'+(ck[i]?' checked':'')+' onchange="imCk(\''+q.id+'\','+i+',this.checked)">'+
+        '<span class="pt">'+r[0]+'점</span><span class="bd">'+imMd(r[1])+'</span></label>';
+    }).join('')+'</div>'+
+    (q.keys&&q.keys.length?'<h4>꼭 써야 할 키워드</h4><div class="keys">'+q.keys.map(function(k){ return '<span>'+esc(k)+'</span>'; }).join('')+'</div>':'')+
+    '<h4>⚠️ 감점 포인트</h4><div class="tip bd">'+imMd(q.trap)+'</div>'+
+    '<h4>📌 기출 경향 — 왜 이 문제인가</h4><div class="tip bd">'+imMd(q.why)+'</div>'+
+    '<div class="mk">'+['o','h','x'].map(function(s){
+      return '<button class="'+s+(l&&l.s===s?' on':'')+'" onclick="imMark(\''+q.id+'\',\''+s+'\')">'+
+        IM_ST[s]+' '+({o:'맞음',h:'부분',x:'틀림'})[s]+'</button>';
+    }).join('')+'</div></div></div>';
+  return h;
+}
+function renderIm(){
+  var d=im.data, el=document.getElementById('pane-im');
+  if(!d.items.length&&!d.review.length){ el.innerHTML='<div class="state">이 날은 문항이 없어요.</div>'; return; }
+  var dd=imDiff(d.today,d.exam), ph=d.items.length?d.items[0].phase:'';
+  var dn=d.days[d.date]||{n:0,done:0};
+  var strip='', t=d.first;
+  while(t<d.exam){
+    var x=d.days[t], c=x?(x.done>=x.n?'f':x.done?'p':''):'';
+    if(t===d.date) c+=' t';
+    strip+='<i class="'+c+'" title="'+t+'"'+(t<=d.today?' onclick="loadIm(\''+t+'\')"':' style="opacity:.4"')+'></i>';
+    t=imAdd(t,1);
+  }
+  var w=new Date(d.date+'T00:00');
+  var h='<div class="im"><div class="im-hd"><span class="dd">D-'+dd+'</span>'+
+    '<span>중등 수학 1차 · '+d.exam.slice(5).replace('-','/')+'(토)</span><span class="ph">'+esc(ph)+'</span></div>'+
+    '<div class="im-strip">'+strip+'</div>'+
+    '<div class="im-nav"><button '+(d.date<=d.first?'disabled':'')+' onclick="loadIm(\''+imAdd(d.date,-1)+'\')">◀</button>'+
+    '<span class="d">'+(+d.date.slice(5,7))+'/'+(+d.date.slice(8))+'('+DOW[w.getDay()]+')'+(d.date===d.today?' 오늘':'')+'</span>'+
+    '<button '+(d.date>=d.today?'disabled':'')+' onclick="loadIm(\''+imAdd(d.date,1)+'\')">▶</button>'+
+    '<span class="p">'+dn.done+'/'+dn.n+' 완료</span></div>'+
+    d.items.map(function(q){ return imCard(q,false); }).join('');
+  if(d.review.length) h+='<div class="im-sec">🔁 다시 풀 문제 '+d.review.length+'</div>'+d.review.map(function(q){ return imCard(q,true); }).join('');
+  var ar=Object.keys(d.area);
+  if(ar.length){
+    h+='<div class="im-sec">📊 영역별 (✅ 맞음 · 🔺 부분 · ❌ 틀림)</div><div class="im-area">';
+    ar.forEach(function(k){
+      var a=d.area[k], n=a.o+a.h+a.x;
+      h+='<span>'+esc(k)+'</span><span class="bt"><i style="width:'+(a.o/n*100)+'%;background:#22c55e"></i>'+
+        '<i style="width:'+(a.h/n*100)+'%;background:#eab308"></i><i style="width:'+(a.x/n*100)+'%;background:#ef4444"></i></span>'+
+        '<span>'+Math.round((a.o+a.h/2)/n*100)+'% · '+n+'</span>';
+    });
+    h+='</div>';
+  }
+  el.innerHTML=h+'</div>';
+  imMath(el);
+}
+function imFind(id){
+  var all=im.data.items.concat(im.data.review);
+  for(var i=0;i<all.length;i++) if(all[i].id===id) return all[i];
+}
+function imRedraw(id){
+  var q=imFind(id), rev=im.data.items.indexOf(q)<0, el=document.getElementById('imq-'+id);
+  var tmp=document.createElement('div'); tmp.innerHTML=imCard(q,rev);
+  var nw=tmp.firstChild; el.parentNode.replaceChild(nw,el); imMath(nw);
+}
+function imOpen(id){ im.open[id]=true; imRedraw(id); }
+function imCk(id,i,on){
+  (im.rb[id]=im.rb[id]||[])[i]=on;
+  var q=imFind(id), sc=0, tot=0;
+  q.rubric.forEach(function(r,j){ tot+=r[0]; if(im.rb[id][j]) sc+=r[0]; });
+  var h4=document.querySelectorAll('#imq-'+id+' .an h4')[2];
+  if(h4) h4.textContent='채점 기준 — 내 답안에 있는 것만 체크 ('+sc+'/'+tot+'점)';
+}
+function imMark(id,s){
+  var d=im.data, q=imFind(id), prev=d.log[id], sc=0;
+  if(prev&&prev.s===s) s='';
+  (q.rubric||[]).forEach(function(r,j){ if((im.rb[id]||[])[j]) sc+=r[0]; });
+  google.script.run.withSuccessHandler(function(r){
+    if(!r||!r.ok){ toast2('저장 실패'); return; }
+    if(r.v) d.log[id]=r.v; else delete d.log[id];
+    var dy=d.days[q.date];
+    if(dy){ if(!prev&&r.v) dy.done++; else if(prev&&!r.v) dy.done--; }
+    renderIm();
+    if(s) toast2(s==='o'?'좋아요 👍':s==='h'?'5일 뒤 다시 풀기에 나와요':'2일 뒤 다시 풀기에 나와요');
+  }).withFailureHandler(function(e){ toast2('저장 실패: '+e.message); }).im_mark(id,s,sc);
 }
 </script>
 </body></html>
