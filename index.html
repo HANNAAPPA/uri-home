@@ -80,9 +80,14 @@ h3{font-size:15px;margin:0 0 12px;}
 .dpev .tm{color:var(--muted);width:44px;flex:none;}
 .dpev .tt{flex:1;min-width:0;}
 .dpev .dx{border:0;background:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 4px;flex:none;}
-.dpev .dq{display:flex;gap:4px;flex:none;}
-.dpev .dq button{border:1px solid var(--line);background:var(--card);border-radius:6px;font-size:12px;padding:3px 7px;cursor:pointer;}
-.dpev .dq button.red{background:#e5484d;color:#fff;border-color:#e5484d;}
+.askov{z-index:70;}
+.askpop{max-width:320px;text-align:center;}
+.askpop b{font-size:15px;}
+.askpop p{margin:8px 0 14px;font-size:14px;line-height:1.5;color:var(--muted);}
+.askbtn{display:flex;gap:6px;}
+.askbtn button{flex:1;border:1px solid var(--line);background:var(--card);border-radius:9px;font-size:14px;padding:10px 4px;cursor:pointer;color:inherit;}
+.askbtn button.red{background:#e5484d;color:#fff;border-color:#e5484d;}
+.askbtn button:disabled{opacity:.6;}
 .dpadd{display:flex;gap:5px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);}
 .dpadd input[type=time]{width:88px;flex:none;}
 .dpadd input[type=text]{flex:1;min-width:0;}
@@ -873,8 +878,8 @@ function applyCal(d){
 function renderHome(d){
   indexEvents(d.events);
   var right=
-    '<div class="rc"><h3>📅 다가오는 일정</h3>'+
-      upcomingHtml(d.upcoming)+'</div>'+
+    '<div class="rc"><h3>📅 다가오는 일정</h3><div id="upList">'+
+      upcomingHtml(d.upcoming)+'</div></div>'+
     '<div class="rc memo"><h3>📝 공유 메모</h3>'+
       '<textarea id="memoBox" placeholder="장보기·전달사항 등… 부부가 같이 씁니다">'+esc(d.memo.text)+'</textarea>'+
       '<div class="memobar"><button onclick="saveMemoNow(this)">저장</button>'+
@@ -948,29 +953,45 @@ function addEv(el){
   if(!title){alert("일정 제목을 입력하세요");return;}
   var btn=el.tagName==="BUTTON"?el:el.parentNode.querySelector("button");
   btn.disabled=true;btn.textContent="…";
-  google.script.run.withSuccessHandler(function(){
-    closeDay();pendingSel=selDate;loadHome();
+  google.script.run.withSuccessHandler(function(r){
+    refreshHome(r);toast2('추가했어요');
   }).withFailureHandler(function(e){
     btn.disabled=false;btn.textContent="+";alert("추가 실패: "+e.message);
-  }).addChildEvent(selDate,endD?'':time,title,endD);
+  }).addChildEvent(selDate,endD?'':time,title,endD,homeY,homeM);
+}
+// 쓰기 뒤에는 서버가 돌려준 이 달 데이터로 캘린더·다가오는 일정만 다시 그린다(메모 입력 중이어도 안 날아감)
+function refreshHome(r){
+  if(!r||!r.home){ closeDay();pendingSel=selDate;loadHome();return; }
+  homeCache={};homeCache[homeY+'-'+homeM]=r.home;
+  applyCal(r.home);
+  var up=document.getElementById('upList'); if(up) up.innerHTML=upcomingHtml(r.home.upcoming);
+  openDay(selDate);
 }
 var dayEvs=[];
+function closeAsk(){ var o=document.getElementById('askov'); if(o) o.remove(); }
 function askDelEv(btn,i){
-  var e=dayEvs[i],q=document.createElement('span');q.className='dq';
-  q.innerHTML=e.recur?
-    '<button class="red" onclick="delEv(this,'+i+',false)">이 날만</button><button class="red" onclick="delEv(this,'+i+',true)">반복 전체</button><button onclick="openDay(selDate)">취소</button>':
-    '<button class="red" onclick="delEv(this,'+i+',false)">삭제</button><button onclick="openDay(selDate)">취소</button>';
-  btn.replaceWith(q);
+  var e=dayEvs[i],multi=e.end&&e.end>e.date;
+  var msg=e.recur?'반복 일정이에요.<br>이 날만 지울까요, 반복 전체를 지울까요?':
+    (multi?'여러 날 일정이에요('+e.date.slice(5)+'~'+e.end.slice(5)+').<br>기간 전체가 지워져요.':'이 일정을 지울까요?');
+  var btns=e.recur?
+    '<button class="red" onclick="delEv(this,'+i+',false)">이 날만</button><button class="red" onclick="delEv(this,'+i+',true)">반복 전체</button>':
+    '<button class="red" onclick="delEv(this,'+i+',false)">삭제</button>';
+  closeAsk();
+  var o=document.createElement('div'); o.id='askov'; o.className='dayov askov';
+  o.onclick=function(ev){ if(ev.target===o) closeAsk(); };
+  o.innerHTML='<div class="daypop askpop"><b>'+esc(e.title)+'</b><p>'+msg+'</p>'+
+    '<div class="askbtn">'+btns+'<button onclick="closeAsk()">취소</button></div></div>';
+  document.body.appendChild(o);
 }
 function delEv(btn,i,all){
   var e=dayEvs[i];
   btn.parentNode.querySelectorAll('button').forEach(function(b){b.disabled=true;});
-  btn.textContent='…';
-  google.script.run.withSuccessHandler(function(){
-    closeDay();pendingSel=selDate;loadHome();
+  btn.textContent='지우는 중…';
+  google.script.run.withSuccessHandler(function(r){
+    closeAsk();refreshHome(r);toast2('지웠어요');
   }).withFailureHandler(function(err){
-    alert("삭제 실패: "+err.message);openDay(selDate);
-  }).deleteChildEvent(e.id,e.date,e.allday?'':e.time,all);
+    closeAsk();alert("삭제 실패: "+err.message);
+  }).deleteChildEvent(e.id,e.date,e.allday?'':e.time,all,homeY,homeM);
 }
 function saveMemoNow(btn){
   var t=document.getElementById("memoBox").value;
