@@ -78,6 +78,11 @@ h3{font-size:15px;margin:0 0 12px;}
 .dpev{padding:5px 0;border-top:1px solid var(--line);font-size:13px;display:flex;gap:8px;}
 .dpev:first-of-type{border-top:0;}
 .dpev .tm{color:var(--muted);width:44px;flex:none;}
+.dpev .tt{flex:1;min-width:0;}
+.dpev .dx{border:0;background:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 4px;flex:none;}
+.dpev .dq{display:flex;gap:4px;flex:none;}
+.dpev .dq button{border:1px solid var(--line);background:var(--card);border-radius:6px;font-size:12px;padding:3px 7px;cursor:pointer;}
+.dpev .dq button.red{background:#e5484d;color:#fff;border-color:#e5484d;}
 .dpadd{display:flex;gap:5px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);}
 .dpadd input[type=time]{width:88px;flex:none;}
 .dpadd input[type=text]{flex:1;min-width:0;}
@@ -918,9 +923,11 @@ function openDay(ds){
   showDay(ds); closeDay();
   var evs=homeEvents[ds]||[];
   var dt=new Date(ds+"T00:00");
-  var body=evs.length?evs.map(function(e){
+  dayEvs=evs;
+  var body=evs.length?evs.map(function(e,i){
     return '<div class="dpev"><span class="tm">'+(e.allday?'종일':e.time)+'</span>'+
-      '<span class="'+(e.recur?'':'once')+'">'+esc(e.title)+'</span></div>';
+      '<span class="tt '+(e.recur?'':'once')+'">'+esc(e.title)+(e.recur?' 🔁':'')+'</span>'+
+      (e.id?'<button class="dx" onclick="askDelEv(this,'+i+')">🗑</button>':'')+'</div>';
   }).join(""):'<div class="empty">일정 없음</div>';
   var add='<div class="dpadd"><input id="evTime" type="time">'+
     '<input id="evTitle" type="text" placeholder="일정 추가" onkeydown="if(event.key===\'Enter\')addEv(this)">'+
@@ -946,6 +953,24 @@ function addEv(el){
   }).withFailureHandler(function(e){
     btn.disabled=false;btn.textContent="+";alert("추가 실패: "+e.message);
   }).addChildEvent(selDate,endD?'':time,title,endD);
+}
+var dayEvs=[];
+function askDelEv(btn,i){
+  var e=dayEvs[i],q=document.createElement('span');q.className='dq';
+  q.innerHTML=e.recur?
+    '<button class="red" onclick="delEv(this,'+i+',false)">이 날만</button><button class="red" onclick="delEv(this,'+i+',true)">반복 전체</button><button onclick="openDay(selDate)">취소</button>':
+    '<button class="red" onclick="delEv(this,'+i+',false)">삭제</button><button onclick="openDay(selDate)">취소</button>';
+  btn.replaceWith(q);
+}
+function delEv(btn,i,all){
+  var e=dayEvs[i];
+  btn.parentNode.querySelectorAll('button').forEach(function(b){b.disabled=true;});
+  btn.textContent='…';
+  google.script.run.withSuccessHandler(function(){
+    closeDay();pendingSel=selDate;loadHome();
+  }).withFailureHandler(function(err){
+    alert("삭제 실패: "+err.message);openDay(selDate);
+  }).deleteChildEvent(e.id,e.date,e.allday?'':e.time,all);
 }
 function saveMemoNow(btn){
   var t=document.getElementById("memoBox").value;
