@@ -131,6 +131,28 @@ h3{font-size:15px;margin:0 0 12px;}
 .memobar button:disabled{opacity:.5;}
 .memobar .mt{color:var(--muted);font-size:12px;}
 
+/* 고정지출 */
+.fxhd{display:flex;align-items:baseline;justify-content:space-between;cursor:pointer;}
+.fxhd .fxsum{font-size:15px;font-weight:700;}
+.fxhd .fxsum small{color:var(--muted);font-weight:400;font-size:11px;margin-left:4px;}
+.fxtbl{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px;}
+.fxtbl td{padding:7px 4px;border-top:1px solid var(--line);vertical-align:baseline;}
+.fxtbl tr.fxr{cursor:pointer;}
+.fxtbl tr.fxr:active{background:var(--bg);}
+.fxtbl .fxcat{width:44px;color:var(--muted);font-size:11px;font-weight:600;}
+.fxtbl .fxn small{display:block;color:var(--muted);font-size:11px;}
+.fxtbl .fxa{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.fxtbl .fxa.na{color:#d97706;font-size:12px;}
+.fxtbl tr.fxsub td{border-top:0;padding-top:0;color:var(--muted);font-size:11px;text-align:right;}
+.fxtbl tr.fxtot td{border-top:2px solid var(--txt);font-weight:700;}
+.fxtbl tr.fxtot2 td{border-top:0;color:var(--muted);font-size:12px;}
+.fxadd{margin-top:10px;width:100%;border:1px dashed var(--line);background:none;border-radius:9px;padding:8px;font-size:13px;color:var(--muted);cursor:pointer;}
+.fxform label{display:block;font-size:12px;color:var(--muted);margin-top:8px;}
+.fxform input[type=text],.fxform input[type=number]{display:block;width:100%;margin-top:3px;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:15px;}
+.fxform .chk{display:flex;align-items:center;gap:6px;color:var(--txt);font-size:13px;}
+.fxform .askbtn{margin-top:14px;}
+.fxform .askbtn button.blue{background:var(--blue);color:#fff;border-color:var(--blue);}
+
 /* 키즈카페 */
 .fclty{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px;}
 .fclty h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center;gap:8px;}
@@ -887,9 +909,88 @@ function renderHome(d){
     '<div class="rc ddsec">'+ddSecInner(d.anniversaries)+'</div>';
   document.getElementById("pane-home").innerHTML=imHomeBar(d.im,d.today)+
     '<div class="homegrid"><div class="homeleft">'+calHtml(d.today)+
-    '</div>'+
+    '<div class="rc" id="fxCard"></div></div>'+
     '<div class="homeright">'+right+'</div></div>';
   showDay(pendingSel||d.today);pendingSel=null;
+  if(d.fx){ fxList=d.fx.list; fxAt=d.fx.at; }
+  renderFx();
+}
+// 💳 고정지출 — 목록 통째로 저장. amt 0 = 금액 미정(합계 제외)
+var fxList=[],fxAt='';
+function fxFolded(){ try{ return localStorage.getItem('fxFold')==='1'; }catch(e){ return false; } }
+function fxToggle(){ try{ localStorage.setItem('fxFold',fxFolded()?'0':'1'); }catch(e){} renderFx(); }
+function fxWon(n){ return Number(n).toLocaleString(); }
+function renderFx(){
+  var box=document.getElementById('fxCard'); if(!box) return;
+  var fixed=0,all=0,na=0,cats=[],by={};
+  fxList.forEach(function(x){
+    if(!by[x.cat]){ by[x.cat]=[]; cats.push(x.cat); }
+    by[x.cat].push(x);
+    if(!x.amt){ na++; return; }
+    all+=x.amt; if(x.cat!=='변동') fixed+=x.amt;
+  });
+  var h='<div class="fxhd" onclick="fxToggle()"><h3>💳 매달 나가는 돈 '+(fxFolded()?'▸':'▾')+'</h3>'+
+    '<span class="fxsum">≈ '+fxWon(all)+'원<small>/월</small></span></div>';
+  if(!fxFolded()){
+    h+='<table class="fxtbl">';
+    cats.forEach(function(c){
+      var sub=0;
+      by[c].forEach(function(x,i){
+        sub+=x.amt;
+        h+='<tr class="fxr" onclick="fxEdit(\''+x.id+'\')"><td class="fxcat">'+(i?'':esc(c))+'</td>'+
+          '<td class="fxn">'+esc(x.name)+(x.note?'<small>'+esc(x.note)+'</small>':'')+'</td>'+
+          (x.amt?'<td class="fxa">'+(x.approx?'≈ ':'')+fxWon(x.amt)+'</td>':'<td class="fxa na">금액 미정</td>')+'</tr>';
+      });
+      if(by[c].length>1&&sub) h+='<tr class="fxsub"><td></td><td colspan="2">'+esc(c)+' 소계 '+fxWon(sub)+'</td></tr>';
+    });
+    h+='<tr class="fxtot"><td></td><td>고정지출</td><td class="fxa">'+fxWon(fixed)+'</td></tr>'+
+      '<tr class="fxtot2"><td></td><td>변동(식비·생활비) 포함</td><td class="fxa">'+fxWon(all)+'</td></tr></table>'+
+      (na?'<div class="empty" style="padding:6px 0 0;font-size:12px;color:#d97706">금액 미정 '+na+'건은 합계에서 빠져 있어요 — 눌러서 입력</div>':'')+
+      '<button class="fxadd" onclick="fxEdit(\'\')">+ 항목 추가</button>'+
+      (fxAt?'<div class="empty" style="padding:6px 0 0;font-size:11px;text-align:right">마지막 수정 '+fxAt+'</div>':'');
+  }
+  box.innerHTML=h;
+}
+function fxEdit(id){
+  var x=fxList.filter(function(v){ return v.id===id; })[0]||{id:'',cat:'',name:'',amt:0,approx:false,note:''};
+  var cats=[]; fxList.forEach(function(v){ if(cats.indexOf(v.cat)<0) cats.push(v.cat); });
+  closeAsk();
+  var o=document.createElement('div'); o.id='askov'; o.className='dayov askov';
+  o.onclick=function(ev){ if(ev.target===o) closeAsk(); };
+  o.innerHTML='<div class="daypop fxform"><div class="dph"><b>'+(id?'항목 고치기':'항목 추가')+'</b><button onclick="closeAsk()">✕</button></div>'+
+    '<label>이름<input type="text" id="fxName" value="'+esc(x.name)+'" placeholder="예: 아내 보험"></label>'+
+    '<label>월 금액(원) — 모르면 비워 두기<input type="number" id="fxAmt" inputmode="numeric" value="'+(x.amt||'')+'"></label>'+
+    '<label class="chk"><input type="checkbox" id="fxApx"'+(x.approx?' checked':'')+'>달마다 금액이 바뀜 (≈ 대략치)</label>'+
+    '<label>구분<input type="text" id="fxCat" list="fxCats" value="'+esc(x.cat)+'" placeholder="주거·통신·교육·보험·차량·변동"></label>'+
+    '<datalist id="fxCats">'+cats.map(function(c){ return '<option value="'+esc(c)+'">'; }).join('')+'</datalist>'+
+    '<label>메모<input type="text" id="fxNote" value="'+esc(x.note)+'" placeholder="결제일·카드 등"></label>'+
+    '<div class="askbtn">'+(id?'<button class="red" onclick="fxDel(this,\''+id+'\')">삭제</button>':'')+
+    '<button class="blue" onclick="fxPut(this,\''+id+'\')">저장</button></div></div>';
+  document.body.appendChild(o);
+  if(!id) document.getElementById('fxName').focus();
+}
+function fxSend(btn,list){
+  btn.parentNode.querySelectorAll('button').forEach(function(b){ b.disabled=true; });
+  btn.textContent='저장 중…';
+  google.script.run.withSuccessHandler(function(r){
+    fxList=r.list; fxAt=r.at; closeAsk(); renderFx(); toast2('저장했어요');
+  }).withFailureHandler(function(e){
+    closeAsk(); alert('저장 실패: '+e.message);
+  }).fx_save(list);
+}
+function fxPut(btn,id){
+  var g=function(k){ return document.getElementById(k); };
+  var name=g('fxName').value.trim(); if(!name){ alert('이름을 입력하세요'); return; }
+  var it={ id:id||('u'+Date.now()), name:name, amt:Math.max(0,Math.round(+g('fxAmt').value||0)),
+    approx:g('fxApx').checked, cat:g('fxCat').value.trim()||'기타', note:g('fxNote').value.trim() };
+  var list=fxList.slice(), i=-1;
+  list.forEach(function(v,k){ if(v.id===id) i=k; });
+  if(i>=0) list[i]=it; else list.push(it);
+  fxSend(btn,list);
+}
+function fxDel(btn,id){
+  if(btn.textContent!=='정말 삭제'){ btn.textContent='정말 삭제'; return; }
+  fxSend(btn,fxList.filter(function(v){ return v.id!==id; }));
 }
 function calHtml(today){
   var html='<div class="cal"><div class="calhd">'+
