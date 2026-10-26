@@ -780,6 +780,8 @@ details.eg-st:not([open]) .chev::after{content:'펼치기 ▾'}
 .im-area{display:grid;grid-template-columns:90px 1fr 54px;gap:6px 10px;align-items:center;font-size:13px}
 .im-area .bt{height:12px;border-radius:6px;background:#e5e7eb;overflow:hidden;display:flex}
 .im-area .bt i{display:block;height:100%}
+/* 아이폰은 16px 미만 입력칸을 누르면 화면을 확대한다 */
+@media(pointer:coarse){input,select,textarea{font-size:16px !important;}.daypop{max-height:85dvh;}.dpadd input[type=time]{width:104px;}}
 </style></head>
 <body>
 <header>
@@ -967,7 +969,7 @@ function fxEdit(id){
     '<div class="askbtn">'+(id?'<button class="red" onclick="fxDel(this,\''+id+'\')">삭제</button>':'')+
     '<button class="blue" onclick="fxPut(this,\''+id+'\')">저장</button></div></div>';
   document.body.appendChild(o);
-  if(!id) document.getElementById('fxName').focus();
+  if(!id&&!matchMedia('(pointer:coarse)').matches) document.getElementById('fxName').focus();
 }
 function fxSend(btn,list){
   btn.parentNode.querySelectorAll('button').forEach(function(b){ b.disabled=true; });
@@ -1044,7 +1046,7 @@ function openDay(ds){
   o.innerHTML='<div class="daypop"><div class="dph"><b>'+(+ds.slice(5,7))+'월 '+(+ds.slice(8))+'일 ('+DOW[dt.getDay()]+')</b>'+
     '<button onclick="closeDay()">✕</button></div>'+body+add+'</div>';
   document.body.appendChild(o);
-  document.getElementById('evTitle').focus();
+  if(!matchMedia('(pointer:coarse)').matches) document.getElementById('evTitle').focus();
 }
 function addEv(el){
   var time=document.getElementById("evTime").value;
