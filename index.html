@@ -154,7 +154,9 @@ h3{font-size:15px;margin:0 0 12px;}
 .fxym{display:flex;gap:8px;font-size:12px;padding:4px 0;}
 .fxym b{flex:none;width:44px;color:var(--muted);}
 .fxym.now b{color:#b45309;}
-.fxym i{font-style:normal;color:var(--muted);}
+.fxym i,.fxlump i{font-style:normal;opacity:.75;}
+.fxyi{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;}
+.fxhint{font-size:11px;color:var(--muted);margin-top:2px;}
 .fxmon{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:4px;}
 .fxmon button{border:1px solid var(--line);background:var(--card);border-radius:7px;padding:7px 0;font-size:13px;cursor:pointer;color:inherit;}
 .fxmon button.on{background:var(--blue);border-color:var(--blue);color:#fff;}
@@ -947,10 +949,10 @@ function renderFx(){
     '<span class="fxsum">≈ '+fxWon(all)+'원<small>/월</small></span></div>'+
     [[nowM,'이번 달'],[nextM,'다음 달']].map(function(p){
       var its=fxLumps(p[0]); if(!its.length) return '';
-      return '<div class="fxlump">📆 '+p[1]+' 목돈 · '+its.map(function(x){ return esc(x.name)+' '+fxLumpAmt(x); }).join(', ')+'</div>';
+      return '<div class="fxlump">📆 '+p[1]+' 목돈 · '+its.map(fxYi).join(', ')+'</div>';
     }).join('');
   if(!fxFolded()){
-    h+='<table class="fxtbl">';
+    h+='<div class="fxhint">줄을 누르면 금액·달을 고칠 수 있어요 ✎</div><table class="fxtbl">';
     cats.forEach(function(c){
       var sub=0;
       by[c].forEach(function(x,i){
@@ -975,14 +977,15 @@ function renderFx(){
 // 1년에 한두 번 내는 돈: 그 달에 낼 몫 = 연 총액 ÷ 내는 횟수
 function fxLumps(m){ return fxList.filter(function(x){ return x.yearly&&x.months&&x.months.indexOf(m)>=0; }); }
 function fxLumpAmt(x){ return x.yamt?(x.approx?'≈':'')+fxWon(Math.round(x.yamt/x.months.length)):'금액 미정'; }
+function fxYi(x){ return '<a class="fxyi" onclick="event.stopPropagation();fxEdit(\''+x.id+'\')">'+esc(x.name)+' <i>'+fxLumpAmt(x)+'</i> ✎</a>'; }
 function fxYearHtml(nowM){
   var rows='';
   for(var m=1;m<=12;m++){
     var its=fxLumps(m); if(!its.length) continue;
-    rows+='<div class="fxym'+(m===nowM?' now':'')+'"><b>'+m+'월</b><span>'+its.map(function(x){ return esc(x.name)+' <i>'+fxLumpAmt(x)+'</i>'; }).join(' · ')+'</span></div>';
+    rows+='<div class="fxym'+(m===nowM?' now':'')+'"><b>'+m+'월</b><span>'+its.map(fxYi).join(' · ')+'</span></div>';
   }
   var nm=fxList.filter(function(x){ return x.yearly&&!(x.months&&x.months.length); });
-  if(nm.length) rows+='<div class="fxym"><b>달 미정</b><span>'+nm.map(function(x){ return esc(x.name); }).join(' · ')+'</span></div>';
+  if(nm.length) rows+='<div class="fxym"><b>달 미정</b><span>'+nm.map(fxYi).join(' · ')+'</span></div>';
   return rows?'<div class="fxyear"><h4>📆 1년에 한두 번 나가는 돈</h4>'+rows+'</div>':'';
 }
 function fxYrToggle(on){
