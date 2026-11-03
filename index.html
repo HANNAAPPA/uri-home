@@ -732,6 +732,12 @@ details.eg-st:not([open]) .chev::after{content:'펼치기 ▾'}
 .re-avail .row small{display:block;color:var(--muted);font-size:11.5px}
 .re-avail .row.sub{padding-left:14px;color:#64748b}
 .re-avail .row.tot{border-bottom:0;font-size:16px;font-weight:800;background:#eff6ff;border-radius:10px;padding:10px}
+.re-avail .re-delx{margin-left:0;padding:2px 6px}
+.re-asadd{margin-top:10px;font-size:13px}
+.re-asadd summary{cursor:pointer;color:var(--blue);font-weight:700;padding:4px 0}
+.re-asadd label{display:block;font-size:11.5px;color:var(--muted);margin:8px 0 0}
+.re-asadd input,.re-asadd select{display:block;width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px;font-family:inherit;margin-top:3px}
+.re-asadd button{margin-top:10px;background:var(--blue);color:#fff;border:0;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer}
 .re-sim{margin-top:14px;padding-top:12px;border-top:2px solid #e2e8f0}
 .re-sim .sl{margin:10px 0}
 .re-sim .sl label{display:block;font-size:13px;margin-bottom:4px}
@@ -805,7 +811,6 @@ details.eg-st:not([open]) .chev::after{content:'펼치기 ▾'}
   </div>
   <div class="tabs">
     <button class="tab on" data-tab="home" onclick="switchTab('home')">🏠 홈</button>
-    <button class="tab" data-tab="sit" onclick="switchTab('sit')">👶 시터</button>
     <button class="tab" data-tab="pf" onclick="switchTab('pf')">📈 포트폴리오</button>
     <button class="tab" data-tab="estate" onclick="switchTab('estate')">🏢 부동산</button>
     <button class="tab" data-tab="im" onclick="switchTab('im')">📐 임용</button>
@@ -817,7 +822,6 @@ details.eg-st:not([open]) .chev::after{content:'펼치기 ▾'}
 <div class="wrap">
   <div class="pane on" id="pane-home"><div class="state">불러오는 중…</div></div>
   <div class="pane" id="pane-kids"><div class="state">불러오는 중… (지점이 많아 20초쯤 걸려요)</div></div>
-  <div class="pane" id="pane-sit"><div class="state">불러오는 중…</div></div>
   <div class="pane" id="pane-child"><div class="state">불러오는 중…</div></div>
   <div class="pane" id="pane-trip"><div class="state">불러오는 중…</div></div>
   <div class="pane" id="pane-estate"><div class="state">불러오는 중…</div></div>
@@ -828,14 +832,14 @@ details.eg-st:not([open]) .chev::after{content:'펼치기 ▾'}
 
 <script>
 var DOW=["일","월","화","수","목","금","토"];
-var loaded={home:false,kids:false,sit:false,child:false,estate:false,pf:false,eng:false,im:false};
+var loaded={home:false,kids:false,child:false,estate:false,pf:false,eng:false,im:false};
 var current="home";
 function p2(n){return ('0'+n).slice(-2);}
 
 function switchTab(t){
   current=t;
   if(t!=="eng"&&typeof egStop==="function") egStop();
-  ["home","kids","sit","child","trip","estate","pf","eng","im"].forEach(function(k){
+  ["home","kids","child","trip","estate","pf","eng","im"].forEach(function(k){
     document.getElementById("pane-"+k).classList.toggle("on",k===t);
   });
   document.querySelectorAll(".tab").forEach(function(b){b.classList.toggle("on",b.dataset.tab===t);});
@@ -846,7 +850,6 @@ function reloadCurrent(){ loadTab(current); }
 function loadTab(t){
   if(t==="home") loadHome();
   else if(t==="kids") loadKids();
-  else if(t==="sit") loadSit();
   else if(t==="child") loadChild();
   else if(t==="trip") loadTrip();
   else if(t==="estate") loadEstate();
@@ -1181,89 +1184,6 @@ function addAnn(){
 function delAnn(id){ google.script.run.withSuccessHandler(patchAnn).deleteAnniversary(id); }
 function patchAnn(list){ var s=document.querySelector(".ddsec"); if(s) s.innerHTML=ddSecInner(list); }
 
-/* ── 👶 시터 ── */
-var sit={d:null,y:0,m:0};
-function sitWon(n){return n.toLocaleString('ko-KR')+'원';}
-function loadSit(){
-  if(!sit.y){var n=new Date();sit.y=n.getFullYear();sit.m=n.getMonth()+1;}
-  busy(true);
-  google.script.run.withSuccessHandler(function(d){
-    sit.d=d;loaded.sit=true;busy(false);renderSit();
-  }).withFailureHandler(function(e){
-    document.getElementById("pane-sit").innerHTML='<div class="state">불러오기 실패: '+esc(e.message)+'</div>';busy(false);
-  }).sit_data();
-}
-function sitYm(){return sit.y+'-'+p2(sit.m);}
-function sitMove(dm){
-  sit.m+=dm;if(sit.m<1){sit.m=12;sit.y--;}if(sit.m>12){sit.m=1;sit.y++;}
-  renderSit();
-}
-function sitTap(ds){
-  var ym=ds.slice(0,7),mo=sit.d.days[ym]||(sit.d.days[ym]={});
-  var nx=((mo[ds]||0)+1)%3;
-  if(nx) mo[ds]=nx; else delete mo[ds];
-  sit.d.hours[ym]=Object.keys(mo).reduce(function(s,k){return s+mo[k];},0);
-  renderSit();
-  google.script.run.withFailureHandler(function(e){alert('저장 실패: '+e.message);loadSit();}).sit_set(ds,nx);
-}
-function sitPay(ym,amt){
-  if(amt>0) sit.d.paid[ym]=amt; else delete sit.d.paid[ym];
-  renderSit();
-  google.script.run.withFailureHandler(function(e){alert('저장 실패: '+e.message);loadSit();}).sit_pay(ym,amt);
-}
-function sitPayBtn(ym){
-  var amt=(sit.d.hours[ym]||0)*sit.d.rate;
-  if(!amt) return;
-  if(confirm(ym+' '+sitWon(amt)+' 지급 완료로 기록할까요?')) sitPay(ym,amt);
-}
-function renderSit(){
-  var d=sit.d,ym=sitYm(),mo=d.days[ym]||{},h=d.hours[ym]||0,amt=h*d.rate;
-  var first=new Date(sit.y,sit.m-1,1).getDay(),last=new Date(sit.y,sit.m,0).getDate();
-  var cells='';
-  for(var i=0;i<first;i++) cells+='<div class="sc e"></div>';
-  for(var day=1;day<=last;day++){
-    var ds=ym+'-'+p2(day),v=mo[ds]||0;
-    cells+='<div class="sc'+(v?' on':'')+(ds===d.today?' td':'')+'" onclick="sitTap(\''+ds+'\')">'+
-      '<span class="sn">'+day+'</span>'+(v?'<span class="sk">✓</span>'+(v===2?'<span class="sh">2h</span>':''):'')+'</div>';
-  }
-  var paidThis=d.paid[ym];
-  var st=paidThis?'<span class="sp ok">지급 완료 '+sitWon(paidThis)+'</span><button class="sb" onclick="sitPay(\''+ym+'\',0)">취소</button>'
-    :(amt?'<button class="sb go" onclick="sitPayBtn(\''+ym+'\')">지급 완료 기록</button>':'');
-  var yms={};Object.keys(d.hours).forEach(function(k){yms[k]=1;});Object.keys(d.paid).forEach(function(k){yms[k]=1;});
-  var list=Object.keys(yms).sort().reverse(),total=0;
-  var rows=list.map(function(k){
-    var hh=d.hours[k]||0,pd=d.paid[k]||0;total+=pd;
-    return '<tr><td>'+k.replace('-','년 ')+'월</td><td>'+(hh?hh+'시간':'-')+'</td><td>'+(hh?sitWon(hh*d.rate):'-')+
-      '</td><td>'+(pd?'<b class="okc">'+sitWon(pd)+'</b>':'<span style="color:var(--muted)">미지급</span>')+'</td></tr>';
-  }).join('');
-  document.getElementById("pane-sit").innerHTML=
-   '<style>.sit-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}'+
-   '.sit-nav button{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 12px;font-size:16px}'+
-   '.sit-nav b{font-size:17px}.sit-g{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}'+
-   '.sit-g .dw{text-align:center;font-size:12px;color:var(--muted);padding:2px 0}'+
-   '.sc{position:relative;aspect-ratio:1/1;background:var(--card);border:1px solid var(--line);border-radius:8px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}'+
-   '.sc.e{background:none;border:0;cursor:default}.sc.td{border-color:var(--blue);border-width:2px}'+
-   '.sc.on{background:#e8f6ee;border-color:var(--green)}.sn{position:absolute;top:3px;left:5px;font-size:12px;color:var(--muted)}'+
-   '.sk{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--green);font-weight:700}'+
-   '.sh{position:absolute;bottom:2px;right:5px;font-size:11px;color:var(--green);font-weight:700}'+
-   '.sit-sum{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:12px 0;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:10px}'+
-   '.sit-sum .big{font-size:20px;font-weight:700}.sit-sum .sm{font-size:12px;color:var(--muted)}'+
-   '.sb{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 10px;font-size:13px;margin-left:6px}'+
-   '.sb.go{background:var(--green);color:#fff;border-color:var(--green)}.sp.ok{color:var(--green);font-weight:700;font-size:13px}'+
-   '.sit-t{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;font-size:13px}'+
-   '.sit-t th,.sit-t td{padding:8px 6px;text-align:right;border-bottom:1px solid var(--line)}.sit-t th:first-child,.sit-t td:first-child{text-align:left}'+
-   '.okc{color:var(--green)}.sit-box{max-width:420px;margin:0 auto}'+
-   '</style>'+
-   '<div class="sit-box">'+
-   '<div class="sit-nav"><button onclick="sitMove(-1)">‹</button><b>'+sit.y+'년 '+sit.m+'월</b><button onclick="sitMove(1)">›</button></div>'+
-   '<div class="sit-g">'+DOW.map(function(w){return '<div class="dw">'+w+'</div>';}).join('')+cells+'</div>'+
-   '<div class="sm" style="font-size:12px;color:var(--muted);margin-top:6px">칸을 누르면 1시간 ✓ → 한 번 더 2시간 ✓ → 한 번 더 취소 · 시간당 '+sitWon(d.rate)+'</div>'+
-   '<div class="sit-sum"><div><div class="sm">'+sit.m+'월 근무 '+h+'시간 · 월말 지급</div><div class="big">'+sitWon(amt)+'</div></div><div>'+st+'</div></div>'+
-   '<h3 style="margin:16px 0 8px;font-size:15px">누적 지급 내역</h3>'+
-   '<table class="sit-t"><tr><th>월</th><th>근무</th><th>금액</th><th>지급</th></tr>'+rows+
-   '<tr><td colspan="3"><b>누적 지급 합계</b></td><td><b>'+sitWon(total)+'</b></td></tr></table></div>';
-}
-
 /* ── 🧸 키즈카페 ── */
 function slotHtml(s,url){
   if(s.sn==="휴일") return '<span class="slot holi">휴일</span>';
@@ -1362,7 +1282,7 @@ function renderEstate(d){
         '<div class="amt">'+(x.amount/10000).toFixed(2)+'억</div>'+
         '<div class="meta">'+x.area+'㎡ · '+x.floor+'층</div></div>';
     }).join("") : '<div class="empty">최근 6개월 실거래 없음</div>';
-    var delBtn = (a.tag==='watch' && a.id) ? '<button class="re-delx" onclick="reWatchDel(\''+a.id+'\')" title="삭제">✕</button>' : '';
+    var delBtn = !a.id ? '' : '<button class="re-delx" onclick="'+(a.tag==='own'?'reAssetDel':'reWatchDel')+'(\''+a.id+'\')" title="삭제">✕</button>';
     return '<div class="aptcard"><h2>'+a.name+' <span class="retag '+a.tag+'">'+tagLab+'</span>'+delBtn+'</h2>'+
       '<div class="addr">'+(a.addr||'')+'</div>'+body+'</div>';
   }).join("");
@@ -1402,7 +1322,7 @@ function reWatchDel(id){
 }
 
 /* ── 💰 가용자산 · 얼마까지 살 수 있을까 (금액은 만원) ──
-   가용자산 = (금호 최근 실거래가 − 세입자 보증금) + 이펜하우스 우리 몫 + 포트폴리오.
+   가용자산 = 보유자산(아파트는 최근 실거래가 − 세입자 보증금, 나머지는 입력 금액) + 포트폴리오.
    대출은 서울 규제지역 기준: LTV 40% · 절대한도 · 스트레스 DSR 40%. 신용대출(영끌)은 한도 안에서 모자란 만큼만 쓴다. */
 var reS = null;   // 시뮬레이터 상태(슬라이더 값)
 function reMan(n){ n=Math.round(n||0); return n.toLocaleString('ko-KR'); }
@@ -1443,11 +1363,12 @@ function reFit(pl, P, C, yk, yrs){
 }
 function reAvailHtml(d){
   var pl=d.plan; if(!pl||!pl.p) return '';
-  var p=pl.p, own=pl.own, saved=null;
+  var p=pl.p, saved=null, own=(pl.assets||[]).filter(function(a){ return a.own; })[0];
   try{ saved=JSON.parse(reGetLS_('re_sim','null')); }catch(e){}
-  reS=saved||{ price:(own?own.price:90000), stock:true, yk:false, yrs:30, wr:p.wifeRate, ownP:0, use:-1, hp:0 };
+  reS=saved||{ price:(own?own.own.price:90000), stock:true, yk:false, yrs:30, wr:p.wifeRate, use:-1, hp:0 };
   if(!(reS.wr>=0)) reS.wr=p.wifeRate;
-  var h='<div class="re-avail"><h3>💰 가용자산 <span class="sub">(우리 돈 · 고정 + 포트폴리오)</span></h3><div id="reAvRows"></div>'
+  var h='<div class="re-avail"><h3>💰 가용자산 <span class="sub">(우리 돈 · 보유자산 + 포트폴리오)</span></h3><div id="reAvRows"></div>'
+    +reAssetFormHtml()
     +'<div class="re-sim" id="reSim">'
     +'<h3>🎚 얼마까지 살 수 있을까</h3>'
     +'<div class="sl"><label>사려는 집값 <b id="reHpV"></b></label><input type="range" id="reHp" min="20000" max="200000" step="1000"></div>'
@@ -1459,6 +1380,47 @@ function reAvailHtml(d){
     +'<div class="out" id="reSimOut"></div>'
     +'<div class="note" id="reSimNote"></div></div></div>';
   return h;
+}
+/* ── 보유자산 추가·삭제 ── */
+function reAssetFormHtml(){
+  var opts=RE_GU_LIST.map(function(g){ return '<option'+(g==='양천구'?' selected':'')+'>'+g+'</option>'; }).join('');
+  return '<details class="re-asadd"><summary>➕ 보유자산 추가</summary>'
+    +'<label>종류<select id="reAsType" onchange="reAsTypeCh(this.value)">'
+    +'<option value="apt">서울 아파트 (실거래가로 시세 계산)</option><option value="fixed">금액 직접 입력 (전세금·그 외)</option></select></label>'
+    +'<label>이름<input id="reAsName" placeholder="단지명 또는 자산 이름"></label>'
+    +'<div id="reAsApt"><label>구<select id="reAsGu">'+opts+'</select></label>'
+    +'<label>세입자 보증금(억) — 없으면 비워 두기<input id="reAsDep" type="number" inputmode="decimal" step="0.1"></label></div>'
+    +'<div id="reAsFix" style="display:none"><label>우리 몫 금액(억)<input id="reAsAmt" type="number" inputmode="decimal" step="0.1"></label>'
+    +'<label>메모<input id="reAsNote" placeholder="예: 전세 보증금 중 우리 돈"></label></div>'
+    +'<button onclick="reAssetAdd()">추가</button></details>';
+}
+function reAsTypeCh(t){
+  document.getElementById('reAsApt').style.display=t==='apt'?'':'none';
+  document.getElementById('reAsFix').style.display=t==='apt'?'none':'';
+}
+function reAssetAdd(){
+  var v=function(id){ return document.getElementById(id).value.trim(); };
+  var o={ type:v('reAsType'), name:v('reAsName') };
+  if(!o.name){ alert('이름을 입력하세요'); return; }
+  if(o.type==='fixed'){
+    o.amount=Math.round(Number(v('reAsAmt'))*10000); o.note=v('reAsNote');
+    if(!(o.amount>0)){ alert('금액을 입력하세요'); return; }
+  } else {
+    o.gu=v('reAsGu'); o.deposit=Math.round(Number(v('reAsDep'))*10000);
+    if(!(o.deposit>=0)){ alert('보증금을 확인하세요'); return; }
+  }
+  busy(true);
+  google.script.run.withSuccessHandler(function(){ loadEstate(); })
+    .withFailureHandler(function(e){ busy(false); alert('추가 실패: '+e.message); })
+    .re_assetAdd(o);
+}
+function reAssetDel(id){
+  var a=reData.plan.assets.filter(function(x){ return x.id===id; })[0];
+  if(!a||!confirm(a.name+'을(를) 보유자산에서 지울까요?')) return;
+  busy(true);
+  google.script.run.withSuccessHandler(function(){ loadEstate(); })
+    .withFailureHandler(function(e){ busy(false); alert('삭제 실패: '+e.message); })
+    .re_assetDel(id);
 }
 function reAvailBind(d){
   var pl=d.plan; if(!pl||!pl.p||!reS) return;
@@ -1484,17 +1446,24 @@ function reAvailBind(d){
   reAvailCalc(d);
 }
 function reAvailCalc(d){
-  var pl=d.plan, p=pl.p, own=pl.own, pf=pl.pf;
-  var ownPrice=reS.ownP>0?reS.ownP:(own?own.price:0);
-  var ownNet=Math.max(0, ownPrice-p.deposit);
+  var pl=d.plan, p=pl.p, pf=pl.pf;
   var pfv=pf.net-(reS.stock?0:pf.stock);
-  var total=ownNet+p.jeonseOurs+pfv;
-  var rows=
-    '<div class="row"><span>🏢 금호(1차) <small>'+(own?('최근 실거래 '+own.date+' · '+own.area+'㎡ '+own.floor+'층'):'최근 실거래 없음')+'</small></span><b>'+reMan(ownPrice)+'</b></div>'
-   +'<div class="row sub"><span>− 세입자 보증금</span><b>−'+reMan(p.deposit)+'</b></div>'
-   +'<div class="row sub"><span>= 보유 부동산 순자산 <small>(양도세·중개비 제외)</small></span><b>'+reMan(ownNet)+'</b></div>'
-   +'<div class="row"><span>🏠 신정이펜하우스4단지 <small>전세 보증금 '+reMan(p.jeonseTotal)+' 중 우리 몫</small></span><b>'+reMan(p.jeonseOurs)+'</b></div>'
-   +'<div class="row"><span>📈 포트폴리오 <small>주식 '+reMan(pf.stock)+' · 예수금 '+reMan(pf.cash)+' · RP '+reMan(pf.rp)+(reS.stock?'':' (주식 제외)')+'</small></span><b>'+reMan(pfv)+'</b></div>'
+  var total=pfv, rows='';
+  (pl.assets||[]).forEach(function(a){
+    var del='<button class="re-delx" onclick="reAssetDel(\''+a.id+'\')" title="삭제">✕</button>';
+    if(a.type==='fixed'){
+      total+=a.amount;
+      rows+='<div class="row"><span>🏠 '+esc(a.name)+(a.note?' <small>'+esc(a.note)+'</small>':'')+'</span><b>'+reMan(a.amount)+'</b>'+del+'</div>';
+      return;
+    }
+    var own=a.own, price=own?own.price:0, dep=a.deposit||0, net=Math.max(0,price-dep);
+    total+=net;
+    rows+='<div class="row"><span>🏢 '+esc(a.name)+' <small>'+(own?('최근 실거래 '+own.date+' · '+own.area+'㎡ '+own.floor+'층'):'최근 6개월 실거래 없음 — 단지명을 확인하거나 금액 직접 입력으로 넣으세요')+'</small></span><b>'+reMan(price)+'</b>'+del+'</div>';
+    if(dep) rows+='<div class="row sub"><span>− 세입자 보증금</span><b>−'+reMan(dep)+'</b></div>'
+      +'<div class="row sub"><span>= 순자산 <small>(양도세·중개비 제외)</small></span><b>'+reMan(net)+'</b></div>';
+  });
+  rows+=
+    '<div class="row"><span>📈 포트폴리오 <small>주식 '+reMan(pf.stock)+' · 예수금 '+reMan(pf.cash)+' · RP '+reMan(pf.rp)+(reS.stock?'':' (주식 제외)')+'</small></span><b>'+reMan(pfv)+'</b></div>'
    +'<div class="row tot"><span>가용자산 합계</span><b>'+reMan(total)+'만원 <small>('+reEok(total)+')</small></b></div>';
   document.getElementById('reAvRows').innerHTML=rows;
 
@@ -1533,7 +1502,7 @@ function reAvailCalc(d){
   document.getElementById('reSimOut').innerHTML=out;
   document.getElementById('reSimNote').innerHTML=
     '인정 연소득 약 <b>'+reMan(inc)+'만원</b>(남편 정교사 17호봉 '+reMan(p.incomeH)+' + 아내 기간제 18호봉 '+reMan(p.incomeW)+'×'+reS.wr+'%) · DSR '+p.dsr+'% = 연 원리금 '+reMan(p.dsr/100*inc)+'만원, 스트레스 가산 +'+p.stress+'%p.<br>'
-   +'서울 전역 규제지역(LTV '+p.ltv+'%, 주담대 15억↓ 6억 · 15~25억 4억 · 25억↑ 2억, 무주택자만) — <b>금호를 팔아 무주택이 된 뒤</b> 대출받는 걸 전제로 했어요. '
+   +'서울 전역 규제지역(LTV '+p.ltv+'%, 주담대 15억↓ 6억 · 15~25억 4억 · 25억↑ 2억, 무주택자만) — <b>보유 집을 팔아 무주택이 된 뒤</b> 대출받는 걸 전제로 했어요. '
    +'신용대출은 인정소득 100%·부부 각 1억(총 2억) 안에서 모자란 만큼만 쓰고, 주택 구입 자금 용도 제한·1년 내 회수 같은 사후 규제는 은행마다 달라요. '
    +'금리는 '+p.asOf+' 5대 은행 평균(주담대 '+p.mortRate+'%·신용 '+p.creditRate+'%)이고 <b>참고용 추정</b>이라 실제 한도는 은행 사전심사로 꼭 확인하세요.';
 }
