@@ -160,6 +160,18 @@ h3{font-size:15px;margin:0 0 12px;}
 .fxmon{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:4px;}
 .fxmon button{border:1px solid var(--line);background:var(--card);border-radius:7px;padding:7px 0;font-size:13px;cursor:pointer;color:inherit;}
 .fxmon button.on{background:var(--blue);border-color:var(--blue);color:#fff;}
+.kdbar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:10px;}
+.kdbar i{display:block;height:100%;background:var(--blue);border-radius:4px;}
+.kdcap{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px;}
+.kdok,.kdwarn{margin-top:8px;font-size:12px;border-radius:8px;padding:7px 9px;line-height:1.55;}
+.kdok{background:#dcfce7;color:#166534;}
+.kdwarn{background:#fef3c7;color:#92400e;}
+.kdwarn i{font-style:normal;opacity:.75;font-size:11px;}
+.kdbtns{display:flex;gap:6px;margin-top:8px;}
+.kdbtns button{flex:1;border:1px solid var(--line);background:var(--card);border-radius:9px;padding:8px 0;font-size:13px;cursor:pointer;color:inherit;}
+.fxtbl .kdneg{color:#dc2626;}
+.fxtbl td.kddel{width:30px;text-align:right;}
+.kddel button{border:0;background:none;font-size:12px;cursor:pointer;padding:0;color:var(--muted);}
 .fxform label{display:block;font-size:12px;color:var(--muted);margin-top:8px;}
 .fxform input[type=text],.fxform input[type=number]{display:block;width:100%;margin-top:3px;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:15px;}
 .fxform .chk{display:flex;align-items:center;gap:6px;color:var(--txt);font-size:13px;}
@@ -927,11 +939,13 @@ function renderHome(d){
     '<div class="rc ddsec">'+ddSecInner(d.anniversaries)+'</div>';
   document.getElementById("pane-home").innerHTML=imHomeBar(d.im,d.today)+
     '<div class="homegrid"><div class="homeleft">'+calHtml(d.today)+
-    '<div class="rc" id="fxCard"></div></div>'+
+    '<div class="rc" id="fxCard"></div><div class="rc" id="kdCard"></div></div>'+
     '<div class="homeright">'+right+'</div></div>';
   showDay(pendingSel||d.today);pendingSel=null;
   if(d.fx){ fxList=d.fx.list; fxAt=d.fx.at; }
   renderFx();
+  if(d.kd) kdO=d.kd;
+  renderKd();
 }
 // 💳 고정지출 — 목록 통째로 저장. amt 0 = 금액 미정(합계 제외)
 var fxList=[],fxAt='';
@@ -1045,6 +1059,116 @@ function fxPut(btn,id){
 function fxDel(btn,id){
   if(btn.textContent!=='정말 삭제'){ btn.textContent='정말 삭제'; return; }
   fxSend(btn,fxList.filter(function(v){ return v.id!==id; }));
+}
+// 🎒 영유 통장 — 잔액 = 기록 합계, 남은 세션 = total − 납부 기록 수. 납부는 첫 납부 달부터 한 달에 한 번으로 친다
+var kdO=null,kdAll=false;
+function kdMan(n){ var v=Math.round(n/10000); return (v<0?'−':'')+Math.abs(v).toLocaleString()+'만'; }
+function kdYm(d){ return d.getFullYear()+'-'+p2(d.getMonth()+1); }
+function kdYmTxt(ym){ var p=ym.split('-'); return p[0]+'년 '+(+p[1])+'월'; }
+function kdNext(ym){ var p=ym.split('-'),y=+p[0],m=+p[1]+1; if(m>12){ y++; m=1; } return y+'-'+p2(m); }
+function kdState(){
+  var bal=0,paid=0,cur=kdYm(new Date()),saved=false,paidNow=false;
+  kdO.log.forEach(function(x){
+    bal+=x.amt;
+    if(x.type==='pay'){ paid++; if(x.d.slice(0,7)===cur) paidNow=true; }
+    if(x.type==='save'&&x.d.slice(0,7)===cur) saved=true;
+  });
+  return { bal:bal, left:Math.max(0,kdO.set.total-paid), cur:cur, saved:saved, paidNow:paidNow };
+}
+// 이자는 세후(15.4% 떼고) 월복리 근사
+function kdSim(st,monthly){
+  var s=kdO.set,bal=st.bal,left=st.left,ym=st.cur,r=s.rate/100*(1-0.154)/12,broke='',last='';
+  for(var i=0;i<240&&left>0;i++){
+    if(ym>=s.saveFrom&&!(i===0&&st.saved)) bal+=monthly;
+    if(ym>=s.firstPay&&!(i===0&&st.paidNow)){ bal-=s.fee; left--; last=ym; if(bal<0&&!broke) broke=ym; }
+    if(bal>0) bal+=bal*r;
+    ym=kdNext(ym);
+  }
+  return { end:bal, broke:broke, last:last };
+}
+function kdNeed(st){
+  var lo=0,hi=Math.max(kdO.set.fee,1);
+  if(!kdSim(st,0).broke) return 0;
+  for(var k=0;k<30;k++){ var mid=(lo+hi)/2; if(kdSim(st,mid).broke) lo=mid; else hi=mid; }
+  return Math.ceil(hi/10000)*10000;
+}
+function renderKd(){
+  var box=document.getElementById('kdCard'); if(!box||!kdO) return;
+  var s=kdO.set,st=kdState(),need=st.left*s.fee,sim=kdSim(st,s.monthly);
+  var pct=need?Math.min(100,st.bal/need*100):100;
+  var h='<div class="fxhd"><h3>🎒 영유 통장</h3><span class="fxsum">'+kdMan(st.bal)+'<small>잔액</small></span></div>'+
+    '<div class="kdbar"><i style="width:'+pct.toFixed(1)+'%"></i></div>'+
+    '<div class="kdcap"><span>남은 영유비 '+kdMan(need)+' 중 '+Math.round(pct)+'%</span><span>남은 '+st.left+'세션 × '+kdMan(s.fee)+'</span></div>';
+  if(!st.left) h+='<div class="kdok">✅ 영유비를 다 냈어요</div>';
+  else if(!sim.broke) h+='<div class="kdok">✅ 월 '+kdMan(s.monthly)+' 적립이면 끝까지 이 통장으로 해결 · '+kdYmTxt(sim.last)+' 마지막 납부 후 ≈ '+kdMan(sim.end)+' 남음</div>';
+  else h+='<div class="kdwarn">⚠️ 월 '+kdMan(s.monthly)+' 적립만으로는 <b>'+kdYmTxt(sim.broke)+'</b>에 바닥나요<br>'+
+    '→ 수당·상여·성과급으로 <b>≈ '+kdMan(-sim.end)+'</b> 더 넣거나, 매달 <b>'+kdMan(kdNeed(st))+'</b>씩 적립<br>'+
+    '<i>마지막 납부 '+kdYmTxt(sim.last)+' · 이자 연 '+s.rate+'%(세후) 반영</i></div>';
+  if(st.cur>=s.saveFrom&&!st.saved&&s.monthly) h+='<button class="fxadd kdsave" onclick="kdQuick(this)">✓ 이번 달 적립 '+kdMan(s.monthly)+' 넣었어요</button>';
+  h+='<div class="kdbtns"><button onclick="kdAddPop(\'in\')">+ 입금</button><button onclick="kdAddPop(\'pay\')">💸 납부</button><button onclick="kdSetPop()">⚙️ 설정</button></div>';
+  var log=kdO.log.slice().reverse(),show=kdAll?log:log.slice(0,4),lab={in:'입금',save:'적립',pay:'납부'};
+  if(log.length){
+    h+='<table class="fxtbl">'+show.map(function(x){
+      return '<tr><td class="fxcat">'+esc(x.d.slice(2).replace(/-/g,'.'))+'</td><td class="fxn">'+lab[x.type]+(x.memo?' <small style="display:inline">'+esc(x.memo)+'</small>':'')+'</td>'+
+        '<td class="fxa'+(x.amt<0?' kdneg':'')+'">'+(x.amt>0?'+':'−')+fxWon(Math.abs(x.amt))+'</td>'+
+        '<td class="kddel"><button onclick="kdDel(this,\''+x.id+'\')">🗑</button></td></tr>';
+    }).join('')+'</table>';
+    if(log.length>4) h+='<div class="fxhint" style="text-align:center;cursor:pointer" onclick="kdAll=!kdAll;renderKd()">'+(kdAll?'접기 ▴':'기록 '+log.length+'건 전부 보기 ▾')+'</div>';
+  }
+  box.innerHTML=h;
+}
+function kdCall(btn,fn,arg,ok){
+  if(btn){ btn.disabled=true; btn.textContent='저장 중…'; }
+  google.script.run.withSuccessHandler(function(r){ kdO=r; closeAsk(); renderKd(); toast2(ok||'저장했어요'); })
+    .withFailureHandler(function(e){ closeAsk(); alert('저장 실패: '+e.message); renderKd(); })[fn](arg);
+}
+function kdQuick(btn){
+  var t=new Date(); kdCall(btn,'kd_add',{ d:t.getFullYear()+'-'+p2(t.getMonth()+1)+'-'+p2(t.getDate()), type:'save', amt:kdO.set.monthly, memo:'월 적립' });
+}
+function kdPop(title,body,onSave){
+  closeAsk();
+  var o=document.createElement('div'); o.id='askov'; o.className='dayov askov';
+  o.onclick=function(ev){ if(ev.target===o) closeAsk(); };
+  o.innerHTML='<div class="daypop fxform"><div class="dph"><b>'+title+'</b><button onclick="closeAsk()">✕</button></div>'+body+
+    '<div class="askbtn"><button class="blue" id="kdOk">저장</button></div></div>';
+  document.body.appendChild(o);
+  document.getElementById('kdOk').onclick=function(){ onSave(this); };
+}
+function kdAddPop(type){
+  var t=new Date(),today=t.getFullYear()+'-'+p2(t.getMonth()+1)+'-'+p2(t.getDate()),st=kdState();
+  var amt=type==='pay'?kdO.set.fee/10000:'';
+  kdPop(type==='pay'?'💸 영유비 납부':'+ 통장에 입금',
+    (type==='pay'?'<div class="fxhint">납부 1건 = 1세션 (남은 '+st.left+'세션)</div>':
+      '<label>종류<select id="kdType" style="display:block;width:100%;margin-top:3px;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:15px">'+
+      '<option value="in">수당·상여·성과급·기타</option><option value="save">월 적립</option></select></label>')+
+    '<label>날짜<input type="date" id="kdD" value="'+today+'" style="display:block;width:100%;margin-top:3px;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:15px"></label>'+
+    '<label>금액(만원)<input type="number" id="kdAmt" inputmode="decimal" step="any" value="'+amt+'"></label>'+
+    '<label>메모<input type="text" id="kdMemo" placeholder="'+(type==='pay'?'예: 4월 세션':'예: 아내 성과급')+'"></label>',
+    function(btn){
+      var g=function(k){ return document.getElementById(k); };
+      var a=Math.round((+g('kdAmt').value||0)*10000); if(!a){ alert('금액을 입력하세요'); return; }
+      kdCall(btn,'kd_add',{ d:g('kdD').value, type:type==='pay'?'pay':g('kdType').value, amt:a, memo:g('kdMemo').value.trim() });
+    });
+}
+function kdSetPop(){
+  var s=kdO.set,f=function(id,lab,v,tp){ return '<label>'+lab+'<input type="'+(tp||'number')+'" id="'+id+'" '+(tp?'':'inputmode="decimal" step="any" ')+'value="'+v+'"'+(tp?' style="display:block;width:100%;margin-top:3px;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:15px"':'')+'></label>'; };
+  kdPop('⚙️ 영유 통장 설정',
+    f('ksFee','1세션 금액(만원)',s.fee/10000)+
+    f('ksTot','이 통장에서 낼 세션 수(전체)',s.total)+
+    f('ksFirst','첫 납부 달',s.firstPay,'month')+
+    f('ksMon','매달 적립(만원)',s.monthly/10000)+
+    f('ksFrom','적립 시작 달',s.saveFrom,'month')+
+    f('ksRate','파킹통장 금리(연 %, 세전)',s.rate)+
+    '<div class="fxhint">남은 세션 = 전체 − 납부 기록 수. 납부는 첫 납부 달부터 한 달에 한 번으로 계산(두 번 내는 달이 있어도 총액은 같음)</div>',
+    function(btn){
+      var g=function(k){ return document.getElementById(k).value; };
+      kdCall(btn,'kd_set',{ fee:Math.round((+g('ksFee')||0)*10000), total:+g('ksTot'), firstPay:g('ksFirst'),
+        monthly:Math.round((+g('ksMon')||0)*10000), saveFrom:g('ksFrom'), rate:+g('ksRate') });
+    });
+}
+function kdDel(btn,id){
+  if(btn.textContent!=='삭제?'){ btn.textContent='삭제?'; return; }
+  kdCall(btn,'kd_del',id,'지웠어요');
 }
 function calHtml(today){
   var html='<div class="cal"><div class="calhd">'+
